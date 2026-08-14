@@ -120,7 +120,7 @@ export async function renderPlayground() {
 
   root.append(header, tabsBar, panels);
 
-  panelSchema.appendChild(el("div", { class: "empty-state" }, [el("div", { class: "ic" }, "⏳"), el("p", {}, "Menyiapkan sandbox...")]));
+  panelSchema.appendChild(el("div", { class: "empty-state" }, [el("div", { class: "spinner" }), el("p", {}, "Menyiapkan sandbox...")]));
 
   const sandbox = await new Sandbox(PLAYGROUND_SQL).init();
 

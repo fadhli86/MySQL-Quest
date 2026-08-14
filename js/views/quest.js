@@ -13,6 +13,7 @@ import {
   completeUngradedStage,
 } from "../state.js";
 import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.js";
+import { celebrateLevelComplete } from "../confetti.js";
 
 const TABS = [
   { id: "quest", label: "Quest", icon: "📜" },
@@ -393,18 +394,30 @@ export async function renderQuest({ navigate, levelId }) {
     renderSchemaPanel();
     switchToResultOnMobile();
 
-    const { xpEvents, mastery, levelStatus: newStatus } = submitStageResult(level, stage, sql, gradeResult);
+    const { xpEvents, mastery, justCompleted } = submitStageResult(level, stage, sql, gradeResult);
     xpEvents.forEach((e) => showXpToast(e.amount, e.reason));
     renderHeader();
     renderQuestPanel();
 
     if (gradeResult.passed) {
-      toast("✅ Submit diterima — kriteria terpenuhi!");
-      if (newStatus === "completed") {
+      if (justCompleted) {
         const next = getNextLevel(level.id);
-        toast(`🎉 Level ${level.id} selesai! Mastery ${mastery}%.${next ? ` Level ${next.id} terbuka.` : " Semua level selesai!"}`, "xp");
+        const xpGained = xpEvents.reduce((a, e) => a + e.amount, 0);
+        setTimeout(() => {
+          celebrateLevelComplete({
+            badgeIcon: level.badgeIcon,
+            badgeName: level.title,
+            levelTitle: `Lv.${level.id} ${level.title}`,
+            xpGained,
+            mastery,
+            hasNext: !!next,
+            onContinue: () => (next ? navigate("quest", next.id) : navigate("journey")),
+          });
+        }, 250);
+      } else {
+        toast("✅ Submit diterima — kriteria terpenuhi!");
+        setTimeout(() => advanceStageIfPossible(), 400);
       }
-      setTimeout(() => advanceStageIfPossible(), 400);
     } else {
       toast("Belum lolos — cek feedback pada tab Result.", "err");
     }
@@ -531,7 +544,7 @@ export async function renderQuest({ navigate, levelId }) {
   renderTabs();
   panelResult.appendChild(emptyResultHint());
 
-  const loadingNode = el("div", { class: "empty-state" }, [el("div", { class: "ic" }, "⏳"), el("p", {}, "Menyiapkan SQL sandbox (SQLite via WebAssembly)...")]);
+  const loadingNode = el("div", { class: "empty-state" }, [el("div", { class: "spinner" }), el("p", {}, "Menyiapkan SQL sandbox (SQLite via WebAssembly)...")]);
   panelSchema.appendChild(loadingNode);
 
   st.sandbox = await new Sandbox(level.datasetSql).init();

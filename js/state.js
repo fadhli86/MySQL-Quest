@@ -182,6 +182,7 @@ export function submitStageResult(level, stage, sql, gradeResult) {
 
   const threshold = level.masteryThreshold || 80;
   const allGradedAttempted = gradedStages.every((s) => ls.stages[s.id] && ls.stages[s.id].attempts > 0);
+  let justCompleted = false;
 
   if (ls.mastery >= threshold && allGradedAttempted) {
     const wasCompleted = ls.status === "completed" || ls.status === "mastered";
@@ -189,6 +190,7 @@ export function submitStageResult(level, stage, sql, gradeResult) {
     if (!wasCompleted) {
       awardBadgeOnce(`level-${level.id}`, level.title, level.badgeIcon || "🏅");
       unlockNext(level);
+      justCompleted = true;
     }
   } else if (allGradedAttempted) {
     ls.status = "needs_remedial";
@@ -197,7 +199,7 @@ export function submitStageResult(level, stage, sql, gradeResult) {
   }
 
   persist();
-  return { xpEvents, mastery: ls.mastery, levelStatus: ls.status };
+  return { xpEvents, mastery: ls.mastery, levelStatus: ls.status, justCompleted };
 }
 
 // For ungraded stages (practice / quiz / demo / reflect): first successful

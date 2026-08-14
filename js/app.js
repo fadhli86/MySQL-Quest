@@ -52,6 +52,7 @@ function buildShell() {
 }
 
 const refs = buildShell();
+let lastRenderedXp = null;
 
 function renderTopbar(activeRoute) {
   clear(refs.topbar);
@@ -61,12 +62,15 @@ function renderTopbar(activeRoute) {
   refs.topbar.classList.toggle("force-hide", isQuest);
   if (isQuest) return;
 
+  const xpWentUp = lastRenderedXp !== null && s.xp > lastRenderedXp;
+  lastRenderedXp = s.xp;
+
   refs.topbar.appendChild(
     el("div", { class: "brand" }, [el("span", { class: "logo" }, "🗄️"), "MYSQL QUEST"])
   );
   refs.topbar.appendChild(el("div", { class: "spacer" }));
   refs.topbar.appendChild(el("div", { class: "rank-pill" }, rank.name));
-  refs.topbar.appendChild(el("div", { class: "xp-pill" }, [el("span", { class: "dot" }, "★"), `${s.xp} XP`]));
+  refs.topbar.appendChild(el("div", { class: `xp-pill${xpWentUp ? " bump" : ""}` }, [el("span", { class: "dot" }, "★"), `${s.xp} XP`]));
   refs.topbar.appendChild(el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Panduan Bermain", onclick: () => navigate("help") }, "❓"));
 }
 
@@ -118,7 +122,10 @@ async function renderRoute() {
   refs.content.scrollTop = 0;
   window.scrollTo(0, 0);
 
-  const mount = (node) => refs.content.appendChild(node);
+  const mount = (node) => {
+    node.classList.add("page-enter");
+    refs.content.appendChild(node);
+  };
 
   switch (route) {
     case "journey":

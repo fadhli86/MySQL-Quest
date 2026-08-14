@@ -440,3 +440,110 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
   display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); cursor: pointer;
 }
 @media (min-width: 900px) { .help-fab { bottom: 18px; } }
+.help-fab:hover { transform: scale(1.08); border-color: var(--brand-dim); }
+.help-fab:active { transform: scale(.95); }
+
+/* ==========================================================================
+   Motion & delight — hover/press feedback, celebratory moments
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+/* Route/page transition */
+.page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Card & interactive hover-lift */
+.journey-node:not(.locked), .badge-card, .continue-card, .portfolio-item { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.journey-node:not(.locked):hover { transform: translateX(3px); }
+.badge-card:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,.3); }
+.continue-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.3); border-color: var(--brand-dim); }
+.stage-pill, .quiz-opt, .badge-chip { transition: transform .12s ease, background .15s ease, border-color .15s ease, color .15s ease; }
+.stage-pill:hover, .quiz-opt:hover:not(:disabled) { transform: translateY(-1px); }
+.stage-pill:active, .quiz-opt:active:not(:disabled) { transform: translateY(0) scale(.98); }
+
+/* Journey "you are here" pulse */
+.journey-node.now .node-dot { animation: pulse-ring 2s ease-out infinite; }
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(56,189,248,.45); }
+  70% { box-shadow: 0 0 0 11px rgba(56,189,248,0); }
+  100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+}
+
+/* Badge shimmer sweep for earned badges */
+.badge-card.earned { position: relative; overflow: hidden; }
+.badge-card.earned::after {
+  content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.22), transparent);
+  animation: shimmer-sweep 3.2s ease-in-out infinite;
+}
+@keyframes shimmer-sweep { 0% { left: -60%; } 55% { left: 130%; } 100% { left: 130%; } }
+.badge-card.earned .ic { animation: badge-pop .5s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes badge-pop { 0% { transform: scale(.4) rotate(-15deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+
+/* Quiz feedback */
+.quiz-opt.wrong { animation: shake .4s ease; }
+.quiz-opt.correct { animation: pop-bounce .35s ease; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); } 40%, 60% { transform: translateX(6px); }
+}
+@keyframes pop-bounce { 0% { transform: scale(1); } 45% { transform: scale(1.035); } 100% { transform: scale(1); } }
+
+/* Stage pill "passed" pop */
+.stage-pill.pass { animation: pop-bounce .3s ease; }
+
+/* XP pill bump when value changes */
+.xp-pill.bump { animation: xp-bump .4s ease; }
+@keyframes xp-bump { 0% { transform: scale(1); } 30% { transform: scale(1.15); color: var(--xp); } 100% { transform: scale(1); } }
+
+/* Progress bar shimmer while filling */
+.progress-fill { position: relative; overflow: hidden; }
+.progress-fill::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  animation: bar-shimmer 2.2s ease-in-out infinite;
+}
+@keyframes bar-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* Hero card ambient glow blobs */
+.hero-card { isolation: isolate; }
+.hero-card::before, .hero-card::after {
+  content: ""; position: absolute; z-index: -1; border-radius: 50%; filter: blur(38px); opacity: .35; pointer-events: none;
+}
+.hero-card::before { width: 180px; height: 180px; background: var(--brand); top: -60px; right: -40px; animation: drift-a 9s ease-in-out infinite alternate; }
+.hero-card::after { width: 140px; height: 140px; background: var(--accent); bottom: -50px; left: 10%; animation: drift-b 11s ease-in-out infinite alternate; }
+@keyframes drift-a { from { transform: translate(0,0); } to { transform: translate(-18px, 14px); } }
+@keyframes drift-b { from { transform: translate(0,0); } to { transform: translate(16px, -10px); } }
+
+/* Loading spinner */
+.spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--brand); margin: 0 auto 12px; animation: spin .75s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Button press ripple-ish feedback already via transform:scale(.97) on :active; add a touch more spring on primary CTAs */
+.btn-primary:active, .btn-submit:active { transform: scale(.95); }
+
+/* ==========================================================================
+   Celebration modal (level complete)
+   ========================================================================== */
+.celebrate-overlay {
+  position: fixed; inset: 0; z-index: 400; background: rgba(4,8,16,.72); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 20px; overflow: hidden;
+}
+.celebrate-box {
+  position: relative; background: linear-gradient(160deg, #16213a 0%, #0f1830 70%, #1a1035 100%);
+  border: 1px solid var(--border); border-radius: 22px; padding: 32px 26px 26px; max-width: 380px; width: 100%;
+  text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: celebrate-in .45s cubic-bezier(.22,.75,.35,1) both;
+}
+@keyframes celebrate-in { from { opacity: 0; transform: scale(.85) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.celebrate-badge { font-size: 62px; line-height: 1; margin-bottom: 4px; animation: badge-pop .55s .1s cubic-bezier(.34,1.56,.64,1) both; }
+.celebrate-title { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
+.celebrate-sub { font-size: 13.5px; color: var(--text-dim); margin-bottom: 16px; }
+.celebrate-stats { display: flex; gap: 10px; margin-bottom: 18px; }
+.celebrate-stats .stat-box { flex: 1; }
+.confetti-piece { position: absolute; top: -10px; border-radius: 2px; animation: confetti-fall linear forwards; pointer-events: none; }
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(340px) rotate(540deg); opacity: 0; }
+}
