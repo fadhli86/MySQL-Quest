@@ -66,6 +66,7 @@ export async function renderDashboard({ navigate }) {
         el("button", { class: "btn btn-block", onclick: () => navigate("journey") }, "🗺️ Journey"),
         el("button", { class: "btn btn-block", onclick: () => navigate("playground") }, "⌨️ SQL Playground"),
         el("button", { class: "btn btn-block", onclick: () => navigate("portfolio") }, "📁 Portfolio"),
+        el("button", { class: "btn btn-block", onclick: () => navigate("help") }, "🧭 Panduan Bermain"),
       ]),
     ]),
 
