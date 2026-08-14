@@ -1,6 +1,7 @@
 // Canvas-rendered completion certificate. Drawn directly onto a <canvas>
 // so the on-screen preview and the downloaded PNG are always identical
 // (no separate HTML-to-image conversion library needed).
+import { buildVerifyParams } from "./certverify.js";
 
 const LECTURER_NAME = "Dr. Fadhli Almu'iini Ahda, S.Kom., M.Kom.";
 const LECTURER_ROLE = "Dosen Pengampu Mata Kuliah Database MySQL";
@@ -45,6 +46,34 @@ export function makeCertId(studentName, completedAt) {
   return `MQ-${hashCode(`${studentName}|${completedAt}`)}`;
 }
 
+export function getVerifyBaseUrl() {
+  const href = window.location.href.split("#")[0].split("?")[0];
+  return href.replace(/index\.html$/, "");
+}
+
+export function buildVerifyUrl(data) {
+  const params = buildVerifyParams(data);
+  return `${getVerifyBaseUrl()}verify.html?${params.toString()}`;
+}
+
+function drawQrCode(ctx, dataUrl, x, y, size) {
+  const qr = window.qrcode(0, "M");
+  qr.addData(dataUrl);
+  qr.make();
+  const count = qr.getModuleCount();
+  const cell = size / count;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x - 10, y - 10, size + 20, size + 20);
+  ctx.fillStyle = "#12233f";
+  for (let row = 0; row < count; row++) {
+    for (let col = 0; col < count; col++) {
+      if (qr.isDark(row, col)) {
+        ctx.fillRect(x + col * cell, y + row * cell, Math.ceil(cell) + 0.5, Math.ceil(cell) + 0.5);
+      }
+    }
+  }
+}
+
 function roundRectPath(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -55,13 +84,22 @@ function roundRectPath(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// opts: { studentName, completedDateStr, avgMastery, xp, badgeCount, completedCount, total, certId }
+// opts: { studentName, completedAt(ms), completedDateStr, avgMastery, xp, badgeCount, completedCount, total, certId }
 export async function drawCertificate(canvas, opts) {
   const W = 1600;
   const H = 1131; // ~A4 landscape ratio
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d");
+
+  opts.verifyUrl = buildVerifyUrl({
+    name: opts.studentName,
+    certId: opts.certId,
+    completedAt: opts.completedAt,
+    mastery: opts.avgMastery,
+    xp: opts.xp,
+    badgeCount: opts.badgeCount,
+  });
 
   try {
     await Promise.all([
@@ -230,39 +268,71 @@ export async function drawCertificate(canvas, opts) {
   ctx.lineTo(W - 120, statY + 60);
   ctx.stroke();
 
-  // bottom row: date (left) + signature (right)
+  // bottom row: date (left) + QR verification (center) + signature (right)
+  // — three independent zones with explicit boundaries, so the QR and the
+  // (variable-width, cursive) signature can never overlap regardless of
+  // lecturer name length: the signature auto-shrinks to fit its zone,
+  // the same technique used for the student name above.
   const bottomY = H - 150;
+  const leftX = 120;
+  const rightX = W - 120;
 
+  const qrSize = 120;
+  const qrX = centerX - qrSize / 2;
+  const qrY = bottomY - 95;
+  try {
+    drawQrCode(ctx, opts.verifyUrl, qrX, qrY, qrSize);
+  } catch (e) {
+    /* qrcode lib unavailable (e.g. offline/CDN blocked) — certificate still renders without it */
+  }
+  ctx.textAlign = "center";
+  ctx.font = '600 15px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = "#666";
+  ctx.fillText("Pindai untuk verifikasi", centerX, qrY + qrSize + 30);
+
+  const dateBlockRight = qrX - 40;
   ctx.textAlign = "left";
   ctx.font = '600 20px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = NAVY;
-  ctx.fillText("Tanggal Penyelesaian", 150, bottomY);
+  ctx.fillText("Tanggal Penyelesaian", leftX, bottomY);
   ctx.strokeStyle = NAVY_SOFT;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(150, bottomY + 14);
-  ctx.lineTo(430, bottomY + 14);
+  ctx.moveTo(leftX, bottomY + 14);
+  ctx.lineTo(dateBlockRight, bottomY + 14);
   ctx.stroke();
   ctx.font = '500 22px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = "#444";
-  ctx.fillText(opts.completedDateStr, 150, bottomY + 42);
+  ctx.fillText(opts.completedDateStr, leftX, bottomY + 42);
 
+  const sigBlockLeft = qrX + qrSize + 40;
   ctx.textAlign = "right";
-  ctx.font = '52px "Great Vibes", "Segoe Script", cursive';
+  let sigSize = 48;
+  ctx.font = `${sigSize}px "Great Vibes", "Segoe Script", cursive`;
+  while (ctx.measureText("Fadhli Almu'iini Ahda").width > rightX - sigBlockLeft && sigSize > 22) {
+    sigSize -= 2;
+    ctx.font = `${sigSize}px "Great Vibes", "Segoe Script", cursive`;
+  }
   ctx.fillStyle = NAVY;
-  ctx.fillText("Fadhli Almu'iini Ahda", W - 150, bottomY - 12);
+  ctx.fillText("Fadhli Almu'iini Ahda", rightX, bottomY - 12);
   ctx.strokeStyle = NAVY_SOFT;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(W - 150, bottomY + 14);
-  ctx.lineTo(W - 430, bottomY + 14);
+  ctx.moveTo(rightX, bottomY + 14);
+  ctx.lineTo(sigBlockLeft, bottomY + 14);
   ctx.stroke();
   ctx.font = '700 20px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = NAVY;
-  ctx.fillText(LECTURER_NAME, W - 150, bottomY + 42);
+  let lecturerSize = 20;
+  ctx.font = `700 ${lecturerSize}px "Cormorant Garamond", Georgia, serif`;
+  while (ctx.measureText(LECTURER_NAME).width > rightX - sigBlockLeft && lecturerSize > 13) {
+    lecturerSize -= 1;
+    ctx.font = `700 ${lecturerSize}px "Cormorant Garamond", Georgia, serif`;
+  }
+  ctx.fillText(LECTURER_NAME, rightX, bottomY + 42);
   ctx.font = '500 16px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = "#666";
-  ctx.fillText(LECTURER_ROLE, W - 150, bottomY + 64);
+  ctx.fillText(LECTURER_ROLE, rightX, bottomY + 64);
 
   // footer fine print
   ctx.textAlign = "center";

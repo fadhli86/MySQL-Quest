@@ -49,7 +49,7 @@ export async function renderCertificate({ navigate }) {
   page.appendChild(actions);
 
   page.appendChild(
-    el("div", { class: "tag-note", style: "margin-top:14px;" }, "Sertifikat ini digenerate otomatis oleh sistem berdasarkan progres pembelajaran yang tersimpan di browser/perangkat ini — bukan dokumen resmi terverifikasi kampus. Simpan file PNG hasil unduhan sebagai bukti/portofolio Anda.")
+    el("div", { class: "tag-note", style: "margin-top:14px;" }, "Sertifikat ini digenerate otomatis oleh sistem berdasarkan progres pembelajaran yang tersimpan di browser/perangkat ini — bukan dokumen resmi terverifikasi kampus. QR code pada sertifikat memuat tanda tangan digital yang dapat dipindai untuk memeriksa konsistensi data (lihat halaman verifikasi). Simpan file PNG hasil unduhan sebagai bukti/portofolio Anda.")
   );
 
   async function render() {
@@ -61,6 +61,7 @@ export async function renderCertificate({ navigate }) {
     ensureCertificateFonts();
     await drawCertificate(canvas, {
       studentName: s.studentName || "Junior Engineer",
+      completedAt: stats.completedAt,
       completedDateStr: fmtDate(stats.completedAt),
       avgMastery: stats.avgMastery,
       xp: stats.xp,

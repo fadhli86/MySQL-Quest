@@ -20,6 +20,7 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **Responsive mobile-first**: navigasi tab (Quest–Editor–Schema–Result) + sticky action bar di HP, workspace 3 panel simultan di desktop — satu basis kode yang sama untuk kedua form factor.
 - **Progress tersimpan otomatis** di `localStorage` browser (autosave draft kode, attempt, mastery, XP, badge).
 - **Learning Progress dashboard**: mastery per CPMK/Sub-CPMK, mirip §14 Grand Design.
+- **Sertifikat kelulusan** (setelah 14 level selesai) — dirender ke `<canvas>`, diunduh sebagai PNG, ditandatangani dosen pengampu, dilengkapi **QR code tanda tangan digital** yang mengarah ke halaman verifikasi (`verify.html`) untuk memeriksa konsistensi data sertifikat.
 - **SQL Playground** bebas dengan seluruh dataset kampus, untuk eksplorasi di luar quest.
 - **Materi kuliah lengkap 14 pertemuan** (folder [`materi/`](materi/README.md)) — modul ajar mendalam bergaya diktat/handout per pertemuan (konsep, sintaks MySQL 8 asli, studi kasus, best practice terkini, latihan mandiri), terhubung ke masing-masing level lewat halaman Panduan Bermain di dalam game. Tersedia juga sebagai satu dokumen Word siap cetak: [`Modul_Ajar_Database_MySQL_14_Pertemuan.docx`](materi/Modul_Ajar_Database_MySQL_14_Pertemuan.docx). Lihat perbedaannya dengan microlearning di dalam game pada [materi/README.md](materi/README.md).
 

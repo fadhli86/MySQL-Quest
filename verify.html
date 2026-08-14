@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0f172a" />
+<title>Verifikasi Sertifikat — MYSQL QUEST</title>
+<meta name="description" content="Verifikasi Sertifikat Kelulusan MYSQL QUEST" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .verify-shell { max-width: 620px; margin: 0 auto; padding: 24px 16px 60px; }
+  .verify-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; margin-bottom: 22px; }
+  .verify-status { border-radius: var(--radius); padding: 18px; margin-bottom: 16px; border: 1px solid; text-align: center; }
+  .verify-status.ok { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.4); }
+  .verify-status.bad { background: rgba(251,113,133,.08); border-color: rgba(251,113,133,.4); }
+  .verify-status .big { font-size: 30px; margin-bottom: 6px; }
+  .verify-status .title { font-weight: 800; font-size: 16px; }
+  .verify-status.ok .title { color: var(--good); }
+  .verify-status.bad .title { color: var(--bad); }
+  .verify-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); font-size: 13.5px; }
+  .verify-row:last-child { border-bottom: none; }
+  .verify-row .k { color: var(--text-faint); font-weight: 700; }
+  .verify-row .v { color: var(--text); font-weight: 700; text-align: right; }
+</style>
+</head>
+<body>
+<div class="verify-shell">
+  <div class="verify-brand"><span>🗄️</span> MYSQL QUEST — Verifikasi Sertifikat</div>
+  <div id="root"></div>
+  <div style="margin-top:18px;">
+    <a class="btn btn-block" href="index.html">← Kembali ke MYSQL QUEST</a>
+  </div>
+</div>
+
+<script type="module">
+  import { verifyParams } from "./js/certverify.js";
+
+  const root = document.getElementById("root");
+  const params = new URLSearchParams(location.search);
+  const hasAnyParam = [...params.keys()].length > 0;
+
+  function el(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === "class") node.className = v;
+      else if (k === "html") node.innerHTML = v;
+      else node.setAttribute(k, v);
+    }
+    for (const c of Array.isArray(children) ? children : [children]) {
+      if (c === null || c === undefined) continue;
+      node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  function fmtDate(ms) {
+    if (!ms) return "-";
+    return new Date(ms).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  function row(k, v) {
+    return el("div", { class: "verify-row" }, [el("span", { class: "k" }, k), el("span", { class: "v" }, v)]);
+  }
+
+  if (!hasAnyParam) {
+    root.appendChild(
+      el("div", { class: "empty-state" }, [
+        el("div", { class: "ic" }, "❓"),
+        el("p", {}, "Tautan verifikasi tidak lengkap. Pindai QR code langsung dari sertifikat MYSQL QUEST untuk memverifikasi."),
+      ])
+    );
+  } else {
+    const { valid, data } = verifyParams(params);
+
+    root.appendChild(
+      el("div", { class: `verify-status ${valid ? "ok" : "bad"}` }, [
+        el("div", { class: "big" }, valid ? "✅" : "⚠️"),
+        el("div", { class: "title" }, valid ? "Data Konsisten dengan Tanda Tangan Digital" : "Data Tidak Konsisten"),
+        el("p", { style: "margin:6px 0 0;font-size:13px;" }, valid
+          ? "Detail di bawah cocok dengan tanda tangan digital yang dibuat bersamaan dengan sertifikat ini."
+          : "Tanda tangan digital pada tautan ini tidak cocok dengan datanya — kemungkinan tautan telah diubah dari aslinya, atau tautan tidak lengkap."),
+      ])
+    );
+
+    root.appendChild(
+      el("div", { class: "card" }, [
+        el("div", { class: "section-title" }, "Detail Sertifikat"),
+        row("Nama", data.name || "-"),
+        row("ID Sertifikat", data.certId || "-"),
+        row("Tanggal Penyelesaian", fmtDate(data.completedAt)),
+        row("Level Selesai", "14 / 14 (Database Architect)"),
+        row("Rata-rata Mastery", `${data.mastery}%`),
+        row("Total XP", `${data.xp}`),
+        row("Badge Diraih", `${data.badgeCount}`),
+        row("Ditandatangani oleh", "Dr. Fadhli Almu'iini Ahda, S.Kom., M.Kom."),
+        row("Jabatan", "Dosen Pengampu Mata Kuliah Database MySQL"),
+      ])
+    );
+
+    root.appendChild(
+      el("div", { class: "tag-note", style: "margin-top:14px;" }, [
+        "ℹ️ MYSQL QUEST berjalan 100% di browser tanpa server pusat. Halaman ini hanya memeriksa bahwa data pada tautan QR konsisten dengan tanda tangan digital yang di-generate bersamaan dengan sertifikat (mendeteksi tautan yang diedit/rusak) — ",
+        el("b", {}, "bukan"),
+        " pencocokan terhadap basis data resmi institusi. Untuk keperluan administratif formal, verifikasi lanjutan langsung ke dosen pengampu tetap disarankan.",
+      ])
+    );
+  }
+</script>
+</body>
+</html>
