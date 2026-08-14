@@ -3,6 +3,59 @@
 // level's dataset script — nothing here ever touches a real server, so
 // students can experiment freely and reset without any risk.
 
+const CREATE_OBJECT_RE = /^\s*CREATE\s+(TABLE|INDEX|VIEW|TRIGGER)\b/i;
+const INSERT_RE = /^\s*INSERT\s+INTO\b/i;
+
+// Splits a SQL script into individual statements on top-level semicolons —
+// not inside a single-quoted string, and not inside a CREATE TRIGGER's
+// BEGIN...END body (which has its own internal semicolons, e.g. the
+// RAISE(ABORT, '...'); inside a trigger). Good enough for the
+// teaching-level SQL this app handles — doesn't need to understand
+// comments, dollar-quoting, nested procedural blocks, etc.
+function splitStatements(sql) {
+  const statements = [];
+  let current = "";
+  let inString = false;
+  let beginDepth = 0;
+  let i = 0;
+  const n = sql.length;
+  while (i < n) {
+    const ch = sql[i];
+    if (ch === "'") {
+      inString = !inString;
+      current += ch;
+      i++;
+      continue;
+    }
+    if (!inString) {
+      const prevChar = i > 0 ? sql[i - 1] : "";
+      const isWordStart = !/[A-Za-z0-9_]/.test(prevChar);
+      if (isWordStart && /^BEGIN\b/i.test(sql.slice(i, i + 6))) {
+        beginDepth++;
+        current += "BEGIN";
+        i += 5;
+        continue;
+      }
+      if (isWordStart && /^END\b/i.test(sql.slice(i, i + 4))) {
+        beginDepth = Math.max(0, beginDepth - 1);
+        current += "END";
+        i += 3;
+        continue;
+      }
+      if (ch === ";" && beginDepth === 0) {
+        statements.push(current);
+        current = "";
+        i++;
+        continue;
+      }
+    }
+    current += ch;
+    i++;
+  }
+  if (current.trim()) statements.push(current);
+  return statements.map((s) => s.trim()).filter(Boolean);
+}
+
 let SQLPromise = null;
 
 function loadSQL() {
@@ -49,6 +102,42 @@ export class Sandbox {
     } catch (e) {
       return { ok: false, error: e.message || String(e) };
     }
+  }
+
+  // Executes SQL statement-by-statement, tolerating conflicts that mean
+  // "this exact thing was already applied successfully" (a redundant
+  // CREATE TABLE/INDEX/VIEW/TRIGGER that already exists, or a re-inserted
+  // duplicate row) instead of aborting the whole submission on them.
+  //
+  // Why this exists: Run and Submit share one persistent sandbox per level
+  // (by design, so state carries across stages/attempts). A student who
+  // tests a CREATE TABLE with Run, then Submits the same statement — or
+  // who submits "CREATE TABLE ...; INSERT ...;" for a later stage after
+  // an earlier stage already created that table — hits a genuine SQLite
+  // error ("already exists" / "UNIQUE constraint failed") on a statement
+  // that is not actually wrong. Grading should judge the *resulting
+  // database state* (that's what validate()/referenceSql compare), not
+  // whether every individual statement in a multi-statement submission
+  // happened to be new. Statements that fail for any other reason (syntax
+  // error, wrong column, etc.) still abort immediately, unchanged.
+  runTolerant(sql) {
+    if (!this.db) return { ok: false, error: "Sandbox belum siap.", results: [] };
+    const statements = splitStatements(sql);
+    const results = [];
+    for (const stmt of statements) {
+      try {
+        const r = this.db.exec(stmt);
+        if (r && r.length) results.push(...r);
+      } catch (e) {
+        const msg = e.message || String(e);
+        const tolerable =
+          (CREATE_OBJECT_RE.test(stmt) && /already exists/i.test(msg)) ||
+          (INSERT_RE.test(stmt) && /unique constraint failed/i.test(msg));
+        if (tolerable) continue;
+        return { ok: false, error: msg, results };
+      }
+    }
+    return { ok: true, results };
   }
 
   // Runs a read-only validator query, e.g. "SELECT * FROM t WHERE ..."

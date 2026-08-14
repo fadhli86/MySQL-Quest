@@ -383,7 +383,13 @@ export async function renderQuest({ navigate, levelId }) {
     const stage = currentStage();
     const sql = st.cm.getValue();
     saveDraft(draftKeyOf(stage), sql);
-    const execResult = st.sandbox.run(sql);
+    // Submit uses the tolerant executor: redundant CREATE TABLE/INDEX/
+    // VIEW/TRIGGER or duplicate INSERT statements (e.g. because an earlier
+    // Run or a previous stage already applied them) are skipped instead of
+    // aborting the whole submission — grading judges the resulting state,
+    // not whether every statement happened to be new this time. Run still
+    // uses the strict executor so experimentation shows real behavior.
+    const execResult = st.sandbox.runTolerant(sql);
     st.lastExec = execResult;
     const gradeResult = gradeSqlStage(st.sandbox, sql, execResult, stage);
     renderFeedback(gradeResult, execResult);
