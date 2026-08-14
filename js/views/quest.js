@@ -8,6 +8,7 @@ import {
   getDraft,
   setLastActive,
   markLevelStarted,
+  markIntroSeen,
   recordHintUsed,
   submitStageResult,
   completeUngradedStage,
@@ -78,16 +79,17 @@ export async function renderQuest({ navigate, levelId }) {
 
   // -------------------------------------------------------------- skeleton
   const header = el("div", { class: "quest-header" });
-  const tabsBar = el("div", { class: "quest-tabs" });
-  const panels = el("div", { class: "quest-panels" });
+  const introScreen = el("div", { class: "intro-screen force-hide" });
+  const tabsBar = el("div", { class: "quest-tabs force-hide" });
+  const panels = el("div", { class: "quest-panels force-hide" });
   const panelQuest = el("div", { class: "panel panel-quest active" });
   const panelEditor = el("div", { class: "panel panel-editor" });
   const panelSchema = el("div", { class: "panel panel-schema" });
   const panelResult = el("div", { class: "panel panel-result" });
   panels.append(panelQuest, panelEditor, panelSchema, panelResult);
-  const actionBar = el("div", { class: "mobile-action-bar" });
+  const actionBar = el("div", { class: "mobile-action-bar force-hide" });
 
-  root.append(header, tabsBar, panels, actionBar);
+  root.append(header, introScreen, tabsBar, panels, actionBar);
 
   // -------------------------------------------------------------- header
   function renderHeader() {
@@ -130,17 +132,15 @@ export async function renderQuest({ navigate, levelId }) {
       ])
     );
 
-    if (getStageProgress(level.id, level.stages[0].id).attempts === 0 || true) {
-      const microDetails = el("details", { class: "micro-block", ...(hasSeenMicro() ? {} : { open: "" }) });
-      const summary = el("summary", { style: "cursor:pointer;font-weight:800;font-size:13px;color:var(--brand);" }, "📘 Microlearning — baca dulu sebelum mengerjakan");
-      microDetails.appendChild(summary);
-      for (const m of level.microlearning) {
-        const b = el("div", { style: "margin-top:10px;" }, [el("h4", {}, m.heading), el("p", { style: "margin:0;" }, m.body)]);
-        if (m.code) b.appendChild(el("pre", { class: "code-block" }, m.code));
-        microDetails.appendChild(b);
-      }
-      panelQuest.appendChild(microDetails);
+    const microDetails = el("details", { class: "micro-block" });
+    const summary = el("summary", { style: "cursor:pointer;font-weight:800;font-size:13px;color:var(--brand);" }, "📘 Materi Pembelajaran — buka lagi bila perlu");
+    microDetails.appendChild(summary);
+    for (const m of level.microlearning) {
+      const b = el("div", { style: "margin-top:10px;" }, [el("h4", {}, m.heading), el("p", { style: "margin:0;" }, m.body)]);
+      if (m.code) b.appendChild(el("pre", { class: "code-block" }, m.code));
+      microDetails.appendChild(b);
     }
+    panelQuest.appendChild(microDetails);
 
     const pillRow = el("div", { class: "stage-pill-row" });
     level.stages.forEach((stg, i) => {
@@ -151,10 +151,6 @@ export async function renderQuest({ navigate, levelId }) {
     panelQuest.appendChild(pillRow);
 
     panelQuest.appendChild(renderStageBody(stage));
-  }
-
-  function hasSeenMicro() {
-    return level.stages.slice(0, 1).some((x) => getStageProgress(level.id, x.id).attempts > 0);
   }
 
   function renderStageBody(stage) {
@@ -539,6 +535,98 @@ export async function renderQuest({ navigate, levelId }) {
     );
   }
 
+  // -------------------------------------------------------------- intro / materi + latihan awal
+  function showQuestInterface() {
+    introScreen.classList.add("force-hide");
+    tabsBar.classList.remove("force-hide");
+    panels.classList.remove("force-hide");
+    actionBar.classList.remove("force-hide");
+    renderQuestPanel();
+    renderEditorPanel();
+    renderSchemaPanel();
+    renderActionBar();
+  }
+
+  function renderIntroScreen() {
+    clear(introScreen);
+    tabsBar.classList.add("force-hide");
+    panels.classList.add("force-hide");
+    actionBar.classList.add("force-hide");
+    introScreen.classList.remove("force-hide");
+
+    const introStage = level.stages[0];
+    const hasPractice = introStage.type === "practice";
+    const demoSql = hasPractice ? (introStage.starterSql || "") : `SELECT * FROM ${level.tables[0]} LIMIT 5;`;
+    const demoInstruction = hasPractice
+      ? introStage.instruction
+      : "Jalankan query berikut untuk melihat contoh data yang akan Anda pakai di level ini.";
+
+    introScreen.appendChild(
+      el("div", { class: "quest-story" }, [
+        el("div", { class: "kicker" }, `${level.cpmk} • ${level.subCpmk}`),
+        el("div", {}, level.story),
+      ])
+    );
+
+    introScreen.appendChild(el("div", { class: "intro-kicker" }, [el("span", { class: "step-num" }, "1"), "Materi Pembelajaran"]));
+    for (const m of level.microlearning) {
+      const block = el("div", { class: "micro-block" }, [el("h4", {}, m.heading), el("p", { style: "margin:0;" }, m.body)]);
+      if (m.code) block.appendChild(el("pre", { class: "code-block" }, m.code));
+      introScreen.appendChild(block);
+    }
+
+    introScreen.appendChild(el("div", { class: "intro-kicker" }, [el("span", { class: "step-num" }, "2"), "Latihan Awal (Guided Practice)"]));
+    const practiceCard = el("div", { class: "instruction-box" }, [el("p", { style: "margin:0 0 10px;" }, demoInstruction)]);
+    const cmHost = el("div", { class: "intro-practice-editor" });
+    practiceCard.appendChild(cmHost);
+    const introResult = el("div", { style: "margin-top:10px;" });
+    practiceCard.appendChild(el("button", { class: "btn btn-primary btn-sm", style: "margin-top:10px;" }, "▶ Jalankan Latihan"));
+    practiceCard.appendChild(introResult);
+    introScreen.appendChild(practiceCard);
+
+    const introCm = CodeMirror(cmHost, {
+      value: demoSql,
+      mode: "text/x-mysql",
+      theme: "dracula",
+      lineNumbers: true,
+      matchBrackets: true,
+    });
+    setTimeout(() => introCm.refresh(), 30);
+
+    let hasRunPractice = false;
+    practiceCard.querySelector("button").addEventListener("click", () => {
+      const exec = st.sandbox.run(introCm.getValue());
+      hasRunPractice = true;
+      clear(introResult);
+      if (!exec.ok) introResult.appendChild(el("div", { class: "error-box" }, humanizeSqlError(exec.error)));
+      else introResult.appendChild(renderResultTable(exec.results));
+    });
+
+    introScreen.appendChild(
+      el(
+        "button",
+        {
+          class: "btn btn-submit btn-block intro-cta",
+          onclick: () => {
+            if (!hasRunPractice) {
+              toast("Coba jalankan dulu latihannya (▶ Jalankan Latihan) sebelum lanjut.", "err");
+              return;
+            }
+            if (hasPractice) {
+              const r = completeUngradedStage(level, introStage);
+              if (r.xpAwarded) showXpToast(r.xpAwarded, introStage.title);
+            }
+            markIntroSeen(level.id);
+            st.stageId = pickInitialStage(level);
+            renderHeader();
+            showQuestInterface();
+          },
+        },
+        "Lanjut ke Quest →"
+      )
+    );
+  }
+
   // -------------------------------------------------------------- boot
   renderHeader();
   renderTabs();
@@ -550,10 +638,11 @@ export async function renderQuest({ navigate, levelId }) {
   st.sandbox = await new Sandbox(level.datasetSql).init();
 
   clear(panelSchema);
-  renderQuestPanel();
-  renderEditorPanel();
-  renderSchemaPanel();
-  renderActionBar();
+  if (getState().levels[level.id].introSeen) {
+    showQuestInterface();
+  } else {
+    renderIntroScreen();
+  }
 
   window.addEventListener("resize", () => { if (st.cm) st.cm.refresh(); });
 

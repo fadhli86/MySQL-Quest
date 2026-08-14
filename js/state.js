@@ -20,6 +20,7 @@ function defaultState() {
     levels[lv.id] = {
       status: i === 0 ? "available" : "locked",
       mastery: 0,
+      introSeen: false,
       stages: {},
     };
   });
@@ -241,6 +242,11 @@ function unlockNext(level) {
   if (next && state.levels[next.id].status === "locked") {
     state.levels[next.id].status = "available";
   }
+}
+
+export function markIntroSeen(levelId) {
+  levelState(levelId).introSeen = true;
+  persist();
 }
 
 export function markLevelStarted(levelId) {
