@@ -130,14 +130,14 @@ export async function drawCertificate(canvas, opts) {
 
   // outer gold border
   ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 6;
-  roundRectPath(ctx, 28, 28, W - 56, H - 56, 10);
+  ctx.lineWidth = 7;
+  roundRectPath(ctx, 28, 28, W - 56, H - 56, 12);
   ctx.stroke();
 
   // inner navy border
   ctx.strokeStyle = NAVY;
   ctx.lineWidth = 2;
-  roundRectPath(ctx, 46, 46, W - 92, H - 92, 6);
+  roundRectPath(ctx, 46, 46, W - 92, H - 92, 8);
   ctx.stroke();
 
   // corner ornaments
@@ -148,10 +148,10 @@ export async function drawCertificate(canvas, opts) {
     if (flip) ctx.scale(flip[0], flip[1]);
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(46, 0);
-    ctx.lineTo(0, 46);
+    ctx.lineTo(54, 0);
+    ctx.lineTo(0, 54);
     ctx.closePath();
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.65;
     ctx.fill();
     ctx.restore();
   };
@@ -194,19 +194,44 @@ export async function drawCertificate(canvas, opts) {
 
   // title
   ctx.fillStyle = NAVY;
-  ctx.font = '700 54px "Cormorant Garamond", Georgia, serif';
+  ctx.font = '700 56px "Cormorant Garamond", Georgia, serif';
   ctx.fillText("SERTIFIKAT PENYELESAIAN", centerX, 300);
   ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.moveTo(centerX - 170, 320);
-  ctx.lineTo(centerX + 170, 320);
+  ctx.moveTo(centerX - 220, 322);
+  ctx.lineTo(centerX + 220, 322);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(centerX - 150, 334);
+  ctx.lineTo(centerX + 150, 334);
+  ctx.strokeStyle = GOLD_LIGHT;
+  ctx.lineWidth = 1;
   ctx.stroke();
 
+  ctx.textAlign = "right";
+  ctx.fillStyle = GOLD;
+  ctx.font = '700 15px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText("OFFICIAL CERTIFICATE", W - 160, 212);
+  ctx.fillStyle = NAVY_SOFT;
+  ctx.font = '600 14px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText("Verified and issued by MYSQL QUEST", W - 160, 230);
+  ctx.textAlign = "center";
+
+  // official certificate metadata
+  ctx.textAlign = "right";
+  ctx.fillStyle = NAVY_SOFT;
+  ctx.font = '600 18px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText("Certificate ID", W - 160, 250);
+  ctx.fillStyle = NAVY;
+  ctx.font = '700 22px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText(opts.certId, W - 160, 278);
+  ctx.textAlign = "center";
+
   // "diberikan kepada"
-  ctx.font = 'italic 500 24px "Cormorant Garamond", Georgia, serif';
+  ctx.font = 'italic 500 26px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = "#555";
-  ctx.fillText("dengan bangga diberikan kepada", centerX, 372);
+  ctx.fillText("dengan bangga diberikan kepada", centerX, 376);
 
   // student name — script font
   ctx.fillStyle = NAVY;
@@ -233,10 +258,10 @@ export async function drawCertificate(canvas, opts) {
     `atas keberhasilan menyelesaikan seluruh ${opts.total} level pembelajaran interaktif MYSQL QUEST dan mencapai gelar ` +
     `“Database Architect”, dengan rata-rata mastery ${opts.avgMastery}% pada mata kuliah Database MySQL berbasis Outcome-Based Education (OBE).`;
   const bodyLines = wrapText(ctx, bodyText, W - 420);
-  let by = 555;
+  let by = 560;
   for (const line of bodyLines) {
     ctx.fillText(line, centerX, by);
-    by += 36;
+    by += 38;
   }
 
   // stat row
@@ -268,29 +293,20 @@ export async function drawCertificate(canvas, opts) {
   ctx.lineTo(W - 120, statY + 60);
   ctx.stroke();
 
-  // bottom row: date (left) + QR verification (center) + signature (right)
-  // — three independent zones with explicit boundaries, so the QR and the
-  // (variable-width, cursive) signature can never overlap regardless of
-  // lecturer name length: the signature auto-shrinks to fit its zone,
-  // the same technique used for the student name above.
-  const bottomY = H - 150;
+  ctx.save();
+  ctx.translate(centerX, 675);
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = NAVY;
+  ctx.font = '700 72px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText("MYSQL QUEST", 0, 0);
+  ctx.restore();
+
+  // bottom row: date + QR + signature
+  const bottomY = H - 164;
   const leftX = 120;
   const rightX = W - 120;
 
-  const qrSize = 120;
-  const qrX = centerX - qrSize / 2;
-  const qrY = bottomY - 95;
-  try {
-    drawQrCode(ctx, opts.verifyUrl, qrX, qrY, qrSize);
-  } catch (e) {
-    /* qrcode lib unavailable (e.g. offline/CDN blocked) — certificate still renders without it */
-  }
-  ctx.textAlign = "center";
-  ctx.font = '600 15px "Cormorant Garamond", Georgia, serif';
-  ctx.fillStyle = "#666";
-  ctx.fillText("Pindai untuk verifikasi", centerX, qrY + qrSize + 30);
-
-  const dateBlockRight = qrX - 40;
+  const dateBlockRight = centerX - 180;
   ctx.textAlign = "left";
   ctx.font = '600 20px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = NAVY;
@@ -305,43 +321,59 @@ export async function drawCertificate(canvas, opts) {
   ctx.fillStyle = "#444";
   ctx.fillText(opts.completedDateStr, leftX, bottomY + 42);
 
-  const sigBlockLeft = qrX + qrSize + 40;
-  ctx.textAlign = "right";
-  let sigSize = 48;
-  ctx.font = `${sigSize}px "Great Vibes", "Segoe Script", cursive`;
-  while (ctx.measureText("Fadhli Almu'iini Ahda").width > rightX - sigBlockLeft && sigSize > 22) {
-    sigSize -= 2;
-    ctx.font = `${sigSize}px "Great Vibes", "Segoe Script", cursive`;
-  }
+  ctx.font = '600 18px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = NAVY_SOFT;
+  ctx.fillText("Certificate No.", leftX, bottomY + 74);
   ctx.fillStyle = NAVY;
-  ctx.fillText("Fadhli Almu'iini Ahda", rightX, bottomY - 12);
-  ctx.strokeStyle = NAVY_SOFT;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(rightX, bottomY + 14);
-  ctx.lineTo(sigBlockLeft, bottomY + 14);
-  ctx.stroke();
   ctx.font = '700 20px "Cormorant Garamond", Georgia, serif';
-  ctx.fillStyle = NAVY;
-  let lecturerSize = 20;
-  ctx.font = `700 ${lecturerSize}px "Cormorant Garamond", Georgia, serif`;
-  while (ctx.measureText(LECTURER_NAME).width > rightX - sigBlockLeft && lecturerSize > 13) {
-    lecturerSize -= 1;
-    ctx.font = `700 ${lecturerSize}px "Cormorant Garamond", Georgia, serif`;
+  ctx.fillText(opts.certId, leftX, bottomY + 100);
+
+  const sigCenterX = rightX - 180;
+  const qrSize = 128;
+  const qrX = sigCenterX - qrSize / 2;
+  const qrY = bottomY - 104;
+  try {
+    drawQrCode(ctx, opts.verifyUrl, qrX, qrY, qrSize);
+  } catch (e) {
+    /* qrcode lib unavailable (e.g. offline/CDN blocked) — certificate still renders without it */
   }
-  ctx.fillText(LECTURER_NAME, rightX, bottomY + 42);
-  ctx.font = '500 16px "Cormorant Garamond", Georgia, serif';
+
+  ctx.textAlign = "center";
+  ctx.font = '600 14px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = "#666";
-  ctx.fillText(LECTURER_ROLE, rightX, bottomY + 64);
+  ctx.fillText("Pindai untuk verifikasi", sigCenterX, qrY + qrSize + 24);
+
+  ctx.strokeStyle = NAVY_SOFT;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(sigCenterX - 208, bottomY + 18);
+  ctx.lineTo(sigCenterX + 208, bottomY + 18);
+  ctx.stroke();
+
+  ctx.fillStyle = NAVY;
+  ctx.font = '700 31px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText(LECTURER_NAME, sigCenterX, bottomY + 54);
+  ctx.font = '600 17px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = "#666";
+  ctx.fillText("Dosen Pengampu", sigCenterX, bottomY + 80);
+  ctx.font = '500 15px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText(LECTURER_ROLE, sigCenterX, bottomY + 103);
+
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(sigCenterX - 124, bottomY + 114);
+  ctx.lineTo(sigCenterX + 124, bottomY + 114);
+  ctx.stroke();
 
   // footer fine print
   ctx.textAlign = "center";
-  ctx.font = '13px Georgia, serif';
-  ctx.fillStyle = "#9a9a9a";
+  ctx.font = '12.5px Georgia, serif';
+  ctx.fillStyle = "#8a8a8a";
   ctx.fillText(
-    `Sertifikat dihasilkan otomatis oleh sistem MYSQL QUEST berdasarkan progres pembelajaran pada perangkat ini — bukan dokumen resmi terverifikasi institusi. ID Sertifikat: ${opts.certId}`,
+    `Sertifikat dihasilkan otomatis oleh sistem MYSQL QUEST. ID Sertifikat: ${opts.certId} — © Ahda Software Development 2026 — version 1.0`,
     centerX,
-    H - 50
+    H - 52
   );
 }
 

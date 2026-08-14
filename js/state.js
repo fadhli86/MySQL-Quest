@@ -210,13 +210,17 @@ export function submitStageResult(level, stage, sql, gradeResult) {
   return { xpEvents, mastery: ls.mastery, levelStatus: ls.status, justCompleted, courseJustCompleted };
 }
 
+function isLevelComplete(levelState) {
+  return ["completed", "mastered"].includes(levelState?.status);
+}
+
 export function isCourseComplete() {
-  return LEVELS.every((lv) => state.levels[lv.id].status === "completed");
+  return Boolean(state.courseCompletedAt) || LEVELS.every((lv) => isLevelComplete(state.levels[lv.id]));
 }
 
 export function getCompletionStats() {
-  const completedCount = LEVELS.filter((lv) => state.levels[lv.id].status === "completed").length;
-  const avgMastery = Math.round(LEVELS.reduce((a, lv) => a + state.levels[lv.id].mastery, 0) / LEVELS.length);
+  const completedCount = LEVELS.filter((lv) => isLevelComplete(state.levels[lv.id])).length;
+  const avgMastery = Math.round(LEVELS.reduce((a, lv) => a + (state.levels[lv.id]?.mastery ?? 0), 0) / LEVELS.length);
   return {
     completedCount,
     total: LEVELS.length,
@@ -285,7 +289,7 @@ export function getLevelStatus(levelId) {
 
 export function getOverallProgress() {
   const total = LEVELS.length;
-  const done = LEVELS.filter((l) => ["completed", "mastered"].includes(levelState(l.id).status)).length;
+  const done = LEVELS.filter((l) => isLevelComplete(levelState(l.id))).length;
   return Math.round((done / total) * 100);
 }
 

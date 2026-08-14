@@ -1,5 +1,6 @@
 import { getState, subscribe, getRank, setStudentName } from "./state.js";
 import { el, clear, promptModal } from "./ui.js";
+import { initTheme, toggleTheme, currentEffectiveTheme } from "./theme.js";
 import { renderDashboard } from "./views/dashboard.js";
 import { renderJourney } from "./views/journey.js";
 import { renderQuest } from "./views/quest.js";
@@ -43,13 +44,33 @@ function buildShell() {
   const bottomNav = el("div", { class: "bottom-nav", id: "bottom-nav" });
 
   const helpFab = el("button", { class: "help-fab", title: "Panduan Bermain", onclick: () => navigate("help") }, "❓");
+  const themeFab = el("button", { class: "theme-fab", title: "Ganti Tema Terang/Gelap", onclick: onToggleTheme }, "🌙");
 
   app.appendChild(topbar);
   app.appendChild(shell);
   app.appendChild(bottomNav);
   app.appendChild(helpFab);
+  app.appendChild(themeFab);
 
-  return { topbar, sidebar, content, bottomNav, helpFab };
+  return { topbar, sidebar, content, bottomNav, helpFab, themeFab };
+}
+
+function themeIcon(effectiveTheme) {
+  return effectiveTheme === "dark" ? "☀️" : "🌙";
+}
+
+function updateThemeButtons() {
+  const icon = themeIcon(currentEffectiveTheme());
+  if (refs.themeFab) refs.themeFab.textContent = icon;
+  const topbarBtn = document.getElementById("topbar-theme-btn");
+  if (topbarBtn) topbarBtn.textContent = icon;
+  const sidebarBtn = document.getElementById("sidebar-theme-btn");
+  if (sidebarBtn) sidebarBtn.querySelector(".ic").textContent = icon;
+}
+
+function onToggleTheme() {
+  toggleTheme();
+  updateThemeButtons();
 }
 
 const refs = buildShell();
@@ -72,6 +93,9 @@ function renderTopbar(activeRoute) {
   refs.topbar.appendChild(el("div", { class: "spacer" }));
   refs.topbar.appendChild(el("div", { class: "rank-pill" }, rank.name));
   refs.topbar.appendChild(el("div", { class: `xp-pill${xpWentUp ? " bump" : ""}` }, [el("span", { class: "dot" }, "★"), `${s.xp} XP`]));
+  refs.topbar.appendChild(
+    el("button", { class: "btn btn-icon btn-ghost btn-sm", id: "topbar-theme-btn", title: "Ganti Tema Terang/Gelap", onclick: onToggleTheme }, themeIcon(currentEffectiveTheme()))
+  );
   refs.topbar.appendChild(el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Panduan Bermain", onclick: () => navigate("help") }, "❓"));
 }
 
@@ -95,6 +119,12 @@ function renderSidebar(activeRoute) {
   );
   refs.sidebar.appendChild(
     el("button", { class: `nav-item${activeRoute === "help" ? " active" : ""}`, onclick: () => navigate("help") }, [el("span", { class: "ic" }, "❓"), "Panduan"])
+  );
+  refs.sidebar.appendChild(
+    el("button", { class: "nav-item", id: "sidebar-theme-btn", onclick: onToggleTheme }, [
+      el("span", { class: "ic" }, themeIcon(currentEffectiveTheme())),
+      "Tema",
+    ])
   );
 }
 
@@ -186,6 +216,8 @@ subscribe(() => {
 window.addEventListener("hashchange", renderRoute);
 
 (async function init() {
+  initTheme();
+  updateThemeButtons();
   const isFirstVisit = await ensureOnboarding();
   if (isFirstVisit && !location.hash) location.hash = "#/help";
   renderRoute();

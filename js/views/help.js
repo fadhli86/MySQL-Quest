@@ -19,8 +19,16 @@ function faq(q, a) {
 
 export async function renderHelp({ navigate }) {
   return el("div", { class: "page page-narrow" }, [
-    el("div", { class: "help-hero" }, [el("span", { class: "ic" }, "🧭"), el("h2", { style: "margin:0;" }, "Panduan Bermain")]),
-    el("p", {}, "Ringkasan singkat supaya Anda tidak bingung — baca sekali di awal, lalu jadikan referensi kapan pun. Tombol ❓ di pojok kanan bawah selalu membawa Anda kembali ke halaman ini, termasuk saat sedang mengerjakan quest."),
+    el("div", { class: "journey-banner" }, [
+      el("div", { class: "eyebrow" }, "Quick Start"),
+      el("div", { class: "help-hero" }, [el("span", { class: "ic" }, "🧭"), el("h2", { style: "margin:0;" }, "Panduan Bermain")]),
+      el("p", { style: "margin:8px 0 0; color:var(--text-dim);" }, "Ringkasan singkat supaya Anda tidak bingung — baca sekali di awal, lalu jadikan referensi kapan pun. Tombol ❓ di pojok kanan bawah selalu membawa Anda kembali ke halaman ini, termasuk saat sedang mengerjakan quest."),
+      el("div", { class: "quick-meta" }, [
+        el("span", { class: "meta-chip" }, "🧠 14 Level"),
+        el("span", { class: "meta-chip" }, "🚀 Start Fast"),
+        el("span", { class: "meta-chip" }, "💡 Tips"),
+      ]),
+    ]),
 
     el("div", { class: "card" }, [
       el("div", { class: "section-title" }, "Apa itu MYSQL QUEST?"),

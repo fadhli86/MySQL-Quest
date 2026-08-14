@@ -50,8 +50,16 @@ export async function renderJourney({ navigate }) {
   }
 
   return el("div", { class: "page page-narrow" }, [
-    el("h2", {}, "Journey — Peta 14 Level"),
-    el("p", {}, "Ikuti perjalanan dari Database Rookie hingga Database Architect. Level terbuka secara berurutan; capai mastery ≥ 80% untuk melanjutkan ke level berikutnya."),
+    el("div", { class: "journey-banner" }, [
+      el("div", { class: "eyebrow" }, "Learning Path"),
+      el("h2", {}, "Journey — Peta 14 Level"),
+      el("p", { style: "margin:8px 0 0; color:var(--text-dim);" }, "Ikuti perjalanan dari Database Rookie hingga Database Architect. Level terbuka secara berurutan; capai mastery ≥ 80% untuk melanjutkan ke level berikutnya."),
+      el("div", { class: "quick-meta" }, [
+        el("span", { class: "meta-chip" }, "📈 14 Level"),
+        el("span", { class: "meta-chip" }, "✅ Mastery ≥ 80%"),
+        el("span", { class: "meta-chip" }, "🏆 Sertifikat"),
+      ]),
+    ]),
     list,
   ]);
 }

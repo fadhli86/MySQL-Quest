@@ -28,6 +28,11 @@ export async function renderDashboard({ navigate }) {
     el("div", { class: "hero-card" }, [
       el("div", { class: "rank-name" }, `👋 Halo, ${s.studentName || "Junior Engineer"}`),
       el("div", { class: "rank-sub" }, `${rank.name} • ${fmtNum(s.xp)} XP${rank.next ? ` — ${rank.nextAt - s.xp} XP menuju ${rank.next}` : " — Rank tertinggi tercapai!"}`),
+      el("div", { class: "status-row" }, [
+        el("span", { class: "status-pill" }, `📈 Progress ${overall}%`),
+        el("span", { class: "status-pill" }, `🎯 Rank ${rank.name}`),
+        el("span", { class: "status-pill" }, `⭐ ${fmtNum(s.xp)} XP`),
+      ]),
       el("div", { class: "progress-track" }, [el("div", { class: "progress-fill", style: `width:${overall}%` })]),
       el("div", { style: "margin-top:8px;font-size:12.5px;color:var(--text-dim);" }, `Course progress: ${overall}% (${LEVELS.filter((l) => ["completed", "mastered"].includes(s.levels[l.id].status)).length}/${LEVELS.length} level selesai)`),
       continueTarget
@@ -71,11 +76,11 @@ export async function renderDashboard({ navigate }) {
 
     el("div", { class: "card", style: "margin-top:14px;" }, [
       el("div", { class: "section-title" }, "Quick Action"),
-      el("div", { class: "stat-row" }, [
-        el("button", { class: "btn btn-block", onclick: () => navigate("journey") }, "🗺️ Journey"),
-        el("button", { class: "btn btn-block", onclick: () => navigate("playground") }, "⌨️ SQL Playground"),
-        el("button", { class: "btn btn-block", onclick: () => navigate("portfolio") }, "📁 Portfolio"),
-        el("button", { class: "btn btn-block", onclick: () => navigate("help") }, "🧭 Panduan Bermain"),
+      el("div", { class: "action-grid" }, [
+        el("button", { class: "btn action-card", onclick: () => navigate("journey") }, [el("span", { class: "ic" }, "🗺️"), el("span", { class: "label" }, "Journey")]),
+        el("button", { class: "btn action-card", onclick: () => navigate("playground") }, [el("span", { class: "ic" }, "⌨️"), el("span", { class: "label" }, "SQL Playground")]),
+        el("button", { class: "btn action-card", onclick: () => navigate("portfolio") }, [el("span", { class: "ic" }, "📁"), el("span", { class: "label" }, "Portfolio")]),
+        el("button", { class: "btn action-card", onclick: () => navigate("help") }, [el("span", { class: "ic" }, "🧭"), el("span", { class: "label" }, "Panduan")]),
       ]),
     ]),
 

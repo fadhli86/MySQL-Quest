@@ -35,14 +35,30 @@ export async function renderCertificate({ navigate }) {
 
   const greeting = el("p", {}, `Selamat, ${s.studentName || "Junior Engineer"}! Anda telah menyelesaikan seluruh perjalanan MYSQL QUEST. Sertifikat di bawah ditandatangani oleh ${LECTURER_NAME} (${LECTURER_ROLE}).`);
 
-  const page = el("div", { class: "page page-narrow" }, [el("h2", {}, "🎓 Sertifikat Kelulusan"), greeting]);
+  const page = el("div", { class: "page page-narrow" }, [
+    el("div", { class: "card cert-banner", style: "position:relative; padding:18px 18px 12px; margin-bottom:14px; background:linear-gradient(135deg,var(--bg-panel-2),var(--bg-elevated));" }, [
+      el("div", { style: "display:flex; align-items:center; gap:12px; margin-bottom:8px; position:relative; z-index:1;" }, [
+        el("div", { style: "width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#dbeafe,#e0e7ff); font-size:24px; box-shadow:inset 0 1px 0 rgba(255,255,255,.7);" }, "🎓"),
+        el("div", { style: "flex:1;" }, [
+          el("div", { style: "font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--brand); font-weight:800;" }, "Certificate of Completion"),
+          el("h2", { style: "margin:4px 0 0; font-size:clamp(1.4rem,2vw,2rem);" }, "Sertifikat Kelulusan"),
+        ]),
+      ]),
+      greeting,
+      el("div", { class: "fact-row", style: "position:relative; z-index:1;" }, [
+        el("span", { class: "fact-pill" }, `📌 ${stats.completedCount}/${stats.total} Level Selesai`),
+        el("span", { class: "fact-pill" }, `🏆 Rata-rata ${stats.avgMastery}%`),
+        el("span", { class: "fact-pill" }, `🔐 ID ${certId}`),
+      ]),
+    ]),
+  ]);
 
-  const canvasWrap = el("div", { style: "border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border-soft);" });
+  const canvasWrap = el("div", { style: "border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border-soft); background:#fff;" });
   const canvas = el("canvas", { style: "display:block;width:100%;height:auto;" });
   canvasWrap.appendChild(canvas);
   page.appendChild(canvasWrap);
 
-  const actions = el("div", { class: "stat-row", style: "margin-top:14px;" }, [
+  const actions = el("div", { class: "stat-row", style: "margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;" }, [
     el("button", { class: "btn btn-primary btn-block" }, "⬇ Unduh Sertifikat (PNG)"),
     el("button", { class: "btn btn-block" }, "✏️ Ubah Nama pada Sertifikat"),
   ]);

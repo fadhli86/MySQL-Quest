@@ -23,6 +23,14 @@
   .verify-row .k { color: var(--text-faint); font-weight: 700; }
   .verify-row .v { color: var(--text); font-weight: 700; text-align: right; }
 </style>
+<script>
+(function () {
+  try {
+    var v = localStorage.getItem("mysqlquest_theme");
+    if (v === "light" || v === "dark") document.documentElement.setAttribute("data-theme", v);
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="verify-shell">
