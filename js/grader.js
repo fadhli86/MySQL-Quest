@@ -135,6 +135,20 @@ export function gradeSqlStage(sandbox, sql, execResult, stage) {
   }
 
   if (!execResult.ok) {
+    // Re-submitting SQL that already succeeded once (via an earlier Run or
+    // Submit) is common for DDL/DML stages: CREATE TABLE/INDEX/TRIGGER/VIEW
+    // and INSERT throw "already exists"/"UNIQUE constraint failed" the
+    // second time, even though the statement itself is correct and the
+    // resulting database state already matches the target. Don't penalize
+    // that — fall back to checking the (unaffected, since the statement
+    // didn't execute) current state against validate().
+    const idempotencyConflict = /already exists|unique constraint failed|duplicate/i.test(execResult.error || "");
+    if (stage.validate && idempotencyConflict) {
+      const v = stage.validate(sandbox, execResult, sql);
+      if (v.passed) {
+        return finalizeScore(sql, stage, weights, 100, v.message || "State database sudah sesuai target (dari percobaan sebelumnya).");
+      }
+    }
     return {
       passed: false,
       score: 0,
@@ -169,6 +183,13 @@ export function gradeSqlStage(sandbox, sql, execResult, stage) {
     message = "Query berhasil dijalankan.";
   }
 
+  return { ...finalizeScore(sql, stage, weights, correctness, message), resultPreview: execResult.results };
+}
+
+// Shared scoring tail: given correctness (0/100) already decided by the
+// caller, checks required/forbidden constructs + efficiency heuristic and
+// combines everything into the final weighted score/pass verdict.
+function finalizeScore(sql, stage, weights, correctness, message) {
   const req = checkConstructs(sql, stage.requiredConstructs, "required");
   const forb = checkConstructs(sql, stage.forbiddenConstructs, "forbidden");
   let concept = 100;
@@ -197,7 +218,6 @@ export function gradeSqlStage(sandbox, sql, execResult, stage) {
     score,
     breakdown: { correctness, concept, efficiency: eff.score, interpretation },
     message: passed ? "Selesai — kriteria terpenuhi." : notes.filter(Boolean).join(" "),
-    resultPreview: execResult.results,
     isError: false,
   };
 }
