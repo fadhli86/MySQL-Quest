@@ -23,13 +23,19 @@ function spawnConfetti(container, count = 46) {
   }
 }
 
-// opts: { badgeIcon, badgeName, levelTitle, xpGained, mastery, hasNext, nextTitle, onContinue }
+// opts: { badgeIcon, badgeName, levelTitle, xpGained, mastery, hasNext, courseComplete, onContinue }
 export function celebrateLevelComplete(opts) {
   const overlay = el("div", { class: "celebrate-overlay" });
   const box = el("div", { class: "celebrate-box" }, [
-    el("div", { class: "celebrate-badge" }, opts.badgeIcon || "🏅"),
-    el("div", { class: "celebrate-title" }, "Level Selesai!"),
-    el("div", { class: "celebrate-sub" }, `${opts.levelTitle} — badge "${opts.badgeName}" diraih`),
+    el("div", { class: "celebrate-badge" }, opts.courseComplete ? "🎓" : opts.badgeIcon || "🏅"),
+    el("div", { class: "celebrate-title" }, opts.courseComplete ? "MYSQL QUEST Selesai!" : "Level Selesai!"),
+    el(
+      "div",
+      { class: "celebrate-sub" },
+      opts.courseComplete
+        ? `Seluruh 14 level tuntas — Anda resmi jadi Database Architect! Badge "${opts.badgeName}" diraih.`
+        : `${opts.levelTitle} — badge "${opts.badgeName}" diraih`
+    ),
     el("div", { class: "celebrate-stats" }, [
       el("div", { class: "stat-box" }, [el("div", { class: "num" }, `+${opts.xpGained}`), el("div", { class: "lbl" }, "XP")]),
       el("div", { class: "stat-box" }, [el("div", { class: "num" }, `${opts.mastery}%`), el("div", { class: "lbl" }, "Mastery")]),
@@ -37,7 +43,7 @@ export function celebrateLevelComplete(opts) {
     el(
       "button",
       { class: "btn btn-primary btn-block", onclick: () => { overlay.remove(); opts.onContinue && opts.onContinue(); } },
-      opts.hasNext ? `Lanjut ke Level Berikutnya →` : "Lihat Journey 🎉"
+      opts.courseComplete ? "Lihat Sertifikat Kelulusan 🎓" : opts.hasNext ? "Lanjut ke Level Berikutnya →" : "Lihat Journey 🎉"
     ),
   ]);
   overlay.appendChild(box);

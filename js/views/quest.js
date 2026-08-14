@@ -390,7 +390,7 @@ export async function renderQuest({ navigate, levelId }) {
     renderSchemaPanel();
     switchToResultOnMobile();
 
-    const { xpEvents, mastery, justCompleted } = submitStageResult(level, stage, sql, gradeResult);
+    const { xpEvents, mastery, justCompleted, courseJustCompleted } = submitStageResult(level, stage, sql, gradeResult);
     xpEvents.forEach((e) => showXpToast(e.amount, e.reason));
     renderHeader();
     renderQuestPanel();
@@ -407,7 +407,8 @@ export async function renderQuest({ navigate, levelId }) {
             xpGained,
             mastery,
             hasNext: !!next,
-            onContinue: () => (next ? navigate("quest", next.id) : navigate("journey")),
+            courseComplete: courseJustCompleted,
+            onContinue: () => (courseJustCompleted ? navigate("certificate") : next ? navigate("quest", next.id) : navigate("journey")),
           });
         }, 250);
       } else {

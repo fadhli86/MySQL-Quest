@@ -1,11 +1,13 @@
-import { getState, getRank } from "../state.js";
+import { getState, getRank, isCourseComplete, getCompletionStats } from "../state.js";
 import { LEVELS } from "../levels.js";
 import { el, fmtNum, timeAgo } from "../ui.js";
 
-export async function renderAchievements() {
+export async function renderAchievements({ navigate } = {}) {
   const s = getState();
   const rank = getRank(s.xp);
   const earnedIds = new Set(s.badges.map((b) => b.id));
+  const complete = isCourseComplete();
+  const stats = getCompletionStats();
 
   const grid = el("div", { class: "badge-grid" });
   for (const lv of LEVELS) {
@@ -23,6 +25,18 @@ export async function renderAchievements() {
 
   return el("div", { class: "page page-narrow" }, [
     el("h2", {}, "Achievement"),
+    el("div", { class: "card", style: complete ? "border-color:rgba(251,191,36,.4);background:linear-gradient(135deg,rgba(251,191,36,.08),transparent);" : "" }, [
+      el("div", { class: "section-title" }, "🎓 Sertifikat Kelulusan"),
+      complete
+        ? el("div", {}, [
+            el("p", { style: "margin:0 0 10px;" }, "Selamat! Anda telah menyelesaikan seluruh 14 level MYSQL QUEST."),
+            el("button", { class: "btn btn-primary btn-block", onclick: () => navigate && navigate("certificate") }, "Lihat & Unduh Sertifikat →"),
+          ])
+        : el("div", {}, [
+            el("p", { style: "margin:0 0 8px;" }, `${stats.completedCount}/${stats.total} level selesai — selesaikan semua level untuk membuka sertifikat.`),
+            el("div", { class: "progress-track" }, [el("div", { class: "progress-fill", style: `width:${Math.round((stats.completedCount / stats.total) * 100)}%` })]),
+          ]),
+    ]),
     el("div", { class: "card" }, [
       el("div", { class: "section-title" }, "Rank Saat Ini"),
       el("div", { style: "font-size:20px;font-weight:800;" }, rank.name),

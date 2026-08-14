@@ -1,4 +1,4 @@
-import { getState, getRank, getOverallProgress, getCpmkMastery } from "../state.js";
+import { getState, getRank, getOverallProgress, getCpmkMastery, isCourseComplete } from "../state.js";
 import { LEVELS, getLevelById } from "../levels.js";
 import { el, fmtNum } from "../ui.js";
 
@@ -15,7 +15,16 @@ export async function renderDashboard({ navigate }) {
 
   const rankProgress = rank.nextAt ? Math.round(((s.xp - (rank.nextAt - 500)) / 500) * 100) : 100;
 
+  const courseComplete = isCourseComplete();
+
   const page = el("div", { class: "page" }, [
+    courseComplete
+      ? el("div", { class: "hero-card", style: "margin-bottom:14px;border-color:rgba(251,191,36,.4);" }, [
+          el("div", { class: "rank-name" }, "🎓 Selamat, MYSQL QUEST Selesai!"),
+          el("div", { class: "rank-sub" }, "Seluruh 14 level telah Anda selesaikan. Sertifikat kelulusan bertanda tangan dosen pengampu sudah bisa diunduh."),
+          el("button", { class: "btn btn-primary btn-block", style: "margin-top:10px;", onclick: () => navigate("certificate") }, "Lihat & Unduh Sertifikat →"),
+        ])
+      : null,
     el("div", { class: "hero-card" }, [
       el("div", { class: "rank-name" }, `👋 Halo, ${s.studentName || "Junior Engineer"}`),
       el("div", { class: "rank-sub" }, `${rank.name} • ${fmtNum(s.xp)} XP${rank.next ? ` — ${rank.nextAt - s.xp} XP menuju ${rank.next}` : " — Rank tertinggi tercapai!"}`),

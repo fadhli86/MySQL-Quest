@@ -8,13 +8,14 @@ import { renderPortfolio } from "./views/portfolio.js";
 import { renderProgress } from "./views/progress.js";
 import { renderPlayground } from "./views/playground.js";
 import { renderHelp } from "./views/help.js";
+import { renderCertificate } from "./views/certificate.js";
 
 const NAV_ITEMS = [
   { route: "dashboard", icon: "🏠", label: "Home" },
   { route: "journey", icon: "🗺️", label: "Journey" },
   { route: "playground", icon: "⌨️", label: "Play" },
   { route: "progress", icon: "📈", label: "Progress" },
-  { route: "achievements", icon: "🏅", label: "More", extraRoutes: ["achievements", "portfolio"] },
+  { route: "achievements", icon: "🏅", label: "More", extraRoutes: ["achievements", "portfolio", "certificate"] },
 ];
 
 const app = document.getElementById("app");
@@ -90,6 +91,9 @@ function renderSidebar(activeRoute) {
     el("button", { class: "nav-item", onclick: () => navigate("portfolio") }, [el("span", { class: "ic" }, "📁"), "Portfolio"])
   );
   refs.sidebar.appendChild(
+    el("button", { class: `nav-item${activeRoute === "certificate" ? " active" : ""}`, onclick: () => navigate("certificate") }, [el("span", { class: "ic" }, "🎓"), "Sertifikat"])
+  );
+  refs.sidebar.appendChild(
     el("button", { class: `nav-item${activeRoute === "help" ? " active" : ""}`, onclick: () => navigate("help") }, [el("span", { class: "ic" }, "❓"), "Panduan"])
   );
 }
@@ -150,6 +154,9 @@ async function renderRoute() {
       break;
     case "help":
       mount(await renderHelp({ navigate }));
+      break;
+    case "certificate":
+      mount(await renderCertificate({ navigate }));
       break;
     case "dashboard":
     default:

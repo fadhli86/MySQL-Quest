@@ -35,6 +35,7 @@ function defaultState() {
     drafts: {},
     lastActive: null,
     createdAt: Date.now(),
+    courseCompletedAt: null,
   };
 }
 
@@ -199,8 +200,31 @@ export function submitStageResult(level, stage, sql, gradeResult) {
     ls.status = "in_progress";
   }
 
+  let courseJustCompleted = false;
+  if (justCompleted && !state.courseCompletedAt && isCourseComplete()) {
+    state.courseCompletedAt = Date.now();
+    courseJustCompleted = true;
+  }
+
   persist();
-  return { xpEvents, mastery: ls.mastery, levelStatus: ls.status, justCompleted };
+  return { xpEvents, mastery: ls.mastery, levelStatus: ls.status, justCompleted, courseJustCompleted };
+}
+
+export function isCourseComplete() {
+  return LEVELS.every((lv) => state.levels[lv.id].status === "completed");
+}
+
+export function getCompletionStats() {
+  const completedCount = LEVELS.filter((lv) => state.levels[lv.id].status === "completed").length;
+  const avgMastery = Math.round(LEVELS.reduce((a, lv) => a + state.levels[lv.id].mastery, 0) / LEVELS.length);
+  return {
+    completedCount,
+    total: LEVELS.length,
+    avgMastery,
+    xp: state.xp,
+    badgeCount: state.badges.length,
+    completedAt: state.courseCompletedAt,
+  };
 }
 
 // For ungraded stages (practice / quiz / demo / reflect): first successful

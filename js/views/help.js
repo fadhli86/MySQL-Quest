@@ -100,6 +100,7 @@ export async function renderHelp({ navigate }) {
         el("li", {}, [el("b", { style: "color:var(--text);" }, "Kode Anda tersimpan otomatis"), " — draft query di Editor tersimpan sendiri, aman kalau berpindah tab atau menutup halaman sebentar."]),
         el("li", {}, [el("b", { style: "color:var(--text);" }, "Progress tersimpan di perangkat/browser ini saja"), " (belum ada akun login sungguhan). Kalau ganti HP/laptop/browser, atau membuka mode Incognito/Private, progress akan mulai dari awal lagi."]),
         el("li", {}, [el("b", { style: "color:var(--text);" }, "SQL Playground"), " — menu bebas latihan tanpa quest/penilaian, memakai seluruh data kampus, cocok untuk eksplorasi bebas."]),
+        el("li", {}, [el("b", { style: "color:var(--text);" }, "🎓 Sertifikat Kelulusan"), " — setelah seluruh 14 level selesai, sertifikat bertanda tangan dosen pengampu otomatis terbuka di menu Achievement, siap diunduh sebagai gambar (PNG)."]),
       ]),
     ]),
 
