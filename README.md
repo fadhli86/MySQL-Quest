@@ -21,7 +21,7 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **Progress tersimpan otomatis** di `localStorage` browser (autosave draft kode, attempt, mastery, XP, badge).
 - **Learning Progress dashboard**: mastery per CPMK/Sub-CPMK, mirip §14 Grand Design.
 - **SQL Playground** bebas dengan seluruh dataset kampus, untuk eksplorasi di luar quest.
-- **Materi kuliah lengkap 14 pertemuan** (folder [`materi/`](materi/README.md)) — modul ajar mendalam bergaya diktat/handout per pertemuan (konsep, sintaks MySQL 8 asli, studi kasus, best practice terkini, latihan mandiri), terhubung ke masing-masing level lewat halaman Panduan Bermain di dalam game. Lihat perbedaannya dengan microlearning di dalam game pada [materi/README.md](materi/README.md).
+- **Materi kuliah lengkap 14 pertemuan** (folder [`materi/`](materi/README.md)) — modul ajar mendalam bergaya diktat/handout per pertemuan (konsep, sintaks MySQL 8 asli, studi kasus, best practice terkini, latihan mandiri), terhubung ke masing-masing level lewat halaman Panduan Bermain di dalam game. Tersedia juga sebagai satu dokumen Word siap cetak: [`Modul_Ajar_Database_MySQL_14_Pertemuan.docx`](materi/Modul_Ajar_Database_MySQL_14_Pertemuan.docx). Lihat perbedaannya dengan microlearning di dalam game pada [materi/README.md](materi/README.md).
 
 ## 🧱 Arsitektur & Batasan yang Disengaja
 
@@ -51,7 +51,9 @@ js/
   views/
     dashboard.js, journey.js, quest.js, achievements.js,
     portfolio.js, progress.js, playground.js, help.js
-materi/                  Materi kuliah lengkap, 14 file Markdown (1 per pertemuan) + index
+materi/                  Materi kuliah lengkap: 14 file Markdown (sumber utama) + index,
+                          Modul_Ajar_Database_MySQL_14_Pertemuan.docx (versi Word gabungan),
+                          build_docx.py (skrip regenerasi versi Word dari Markdown)
 ```
 
 Tanpa build step — murni HTML/CSS/JS (ES modules), dependency (CodeMirror, sql.js) dimuat dari CDN jsDelivr.

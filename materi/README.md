@@ -11,6 +11,17 @@ Bedanya dengan microlearning singkat di dalam game:
 | Sintaks SQL | Disesuaikan sandbox SQLite (browser) | **MySQL 8.0+ asli** (DDL/DML resmi MySQL) |
 | Format | Kartu di layar HP/desktop | Markdown — bisa dibaca di GitHub, dicetak, atau diimpor ke slide |
 
+## 📄 Versi Word
+
+Seluruh 14 pertemuan juga tersedia digabung dalam satu dokumen Word siap cetak: **[Modul_Ajar_Database_MySQL_14_Pertemuan.docx](Modul_Ajar_Database_MySQL_14_Pertemuan.docx)** (halaman judul, daftar isi otomatis — klik kanan lalu "Update Field" di Word untuk menampilkan nomor halaman, setiap pertemuan mulai di halaman baru).
+
+File Markdown (`pertemuan-*.md`) adalah **sumber utama (source of truth)**. Bila materi diperbarui, regenerasi versi Word dengan:
+
+```bash
+pip install python-docx
+python build_docx.py
+```
+
 > ⚠️ **Catatan penting soal dialek SQL.** Game MYSQL QUEST menjalankan sandbox di browser memakai SQLite (via WebAssembly) supaya bisa berjalan tanpa server/instalasi. Sintaks inti (SELECT/JOIN/GROUP BY/subquery/dll) identik dengan MySQL, tetapi contoh DDL di modul ini memakai sintaks **MySQL asli** (`AUTO_INCREMENT`, `ENGINE=InnoDB`, tipe data MySQL, dll) karena itulah yang berlaku di ujian praktikum/lab MySQL sesungguhnya (XAMPP, MySQL Workbench, phpMyAdmin, atau server MySQL kelas). Perbedaan kecil selalu disebutkan di catatan tiap pertemuan bila relevan.
 
 ## Daftar Pertemuan
