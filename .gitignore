@@ -5,3 +5,7 @@ Thumbs.db
 ~$*.docx
 ~$*.doc
 __pycache__/
+
+# Confidential answer key — local reference for the lecturer only.
+# Must NEVER be committed/pushed to the public repo.
+RAHASIA-kunci-jawaban/
