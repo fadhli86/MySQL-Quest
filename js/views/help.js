@@ -1,4 +1,13 @@
 import { el } from "../ui.js";
+import { LEVELS } from "../levels.js";
+
+const MATERI_SLUGS = {
+  1: "pertemuan-01-database-rookie", 2: "pertemuan-02-data-architect", 3: "pertemuan-03-schema-builder",
+  4: "pertemuan-04-crud-ranger", 5: "pertemuan-05-query-hunter", 6: "pertemuan-06-data-analyst",
+  7: "pertemuan-07-join-master", 8: "pertemuan-08-query-strategist", 9: "pertemuan-09-data-guardian",
+  10: "pertemuan-10-normalization-master", 11: "pertemuan-11-database-engineer", 12: "pertemuan-12-transaction-guardian",
+  13: "pertemuan-13-database-wizard", 14: "pertemuan-14-database-architect",
+};
 
 function step(title, body) {
   return el("li", {}, [el("div", { class: "num" }), el("div", { class: "body" }, [el("b", {}, title), body ? el("div", {}, body) : null])]);
@@ -16,6 +25,22 @@ export async function renderHelp({ navigate }) {
     el("div", { class: "card" }, [
       el("div", { class: "section-title" }, "Apa itu MYSQL QUEST?"),
       el("p", { style: "margin:0;" }, "Game belajar Database MySQL. Anda berperan sebagai Junior Database Engineer yang naik level dari Database Rookie sampai Database Architect (14 level) dengan menulis SQL sungguhan pada sandbox yang aman — bukan sekadar pilihan ganda. Setiap query yang Anda tulis dinilai otomatis oleh sistem."),
+    ]),
+
+    el("div", { class: "card", style: "margin-top:12px;" }, [
+      el("div", { class: "section-title" }, "📚 Materi Lengkap 14 Pertemuan"),
+      el("p", {}, "Setiap level di game berpasangan dengan satu modul materi lengkap (konsep mendalam, sintaks MySQL asli, studi kasus, best practice terkini, dan latihan mandiri) — cocok dibaca sebelum kelas atau sebagai bahan belajar mandiri. Tersimpan sebagai berkas Markdown di folder "), el("code", { class: "inline-code" }, "materi/"), el("span", {}, " pada repository project ini (tampil rapi saat dibuka langsung di GitHub)."),
+      el("div", { class: "info-table-wrap" }, [
+        el("table", { class: "info-table" }, [
+          el("tbody", {}, LEVELS.map((lv) =>
+            el("tr", {}, [
+              el("td", {}, `Lv.${lv.id}`),
+              el("td", {}, el("a", { href: `materi/${MATERI_SLUGS[lv.id]}.md`, target: "_blank", rel: "noopener" }, `${lv.title} — ${lv.competency}`)),
+            ])
+          )),
+        ]),
+      ]),
+      el("div", { class: "tag-note" }, "Membuka tautan di atas langsung dari situs game akan menampilkan teks Markdown apa adanya (belum ter-render rapi) — untuk tampilan terformat penuh, buka folder materi/ pada halaman repository GitHub project ini."),
     ]),
 
     el("div", { class: "card", style: "margin-top:12px;" }, [
