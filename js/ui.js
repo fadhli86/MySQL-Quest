@@ -55,11 +55,12 @@ export function confirmModal({ title, body, confirmLabel = "Ya", cancelLabel = "
   });
 }
 
-export function promptModal({ title, body, placeholder = "", defaultValue = "" }) {
+export function promptModal({ title, body, placeholder = "", defaultValue = "", maxLength = null }) {
   return new Promise((resolve) => {
     const overlay = el("div", { class: "modal-overlay" });
     const input = el("input", {
       type: "text", value: defaultValue, placeholder,
+      maxlength: maxLength || null,
       style: "width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);font-size:15px;margin-top:10px;",
     });
     const box = el("div", { class: "modal-box" }, [

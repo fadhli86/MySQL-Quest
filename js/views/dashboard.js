@@ -84,7 +84,11 @@ export async function renderDashboard({ navigate }) {
       ]),
     ]),
 
-    el("div", { class: "tag-note", style: "margin-top:14px;" }, "Progress disimpan secara lokal di browser ini (localStorage) — belum ada akun/login. Gunakan browser & perangkat yang sama untuk melanjutkan progres."),
+    el("div", { class: "tag-note", style: "margin-top:14px;" }, [
+      "Progress disimpan otomatis di browser ini (localStorage) — belum ada akun/login. Anda bisa berhenti kapan saja dan lanjut nanti dari titik terakhir. Untuk lanjut di device/browser lain, pakai Export/Import di halaman ",
+      el("a", { href: "#/progress", style: "color:var(--brand);font-weight:700;" }, "Learning Progress"),
+      ".",
+    ]),
   ]);
 
   return page;

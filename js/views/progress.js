@@ -1,4 +1,4 @@
-import { getState, getCpmkMastery, getOverallProgress, resetAllProgress, exportProgressJson } from "../state.js";
+import { getState, getCpmkMastery, getOverallProgress, resetAllProgress, exportProgressJson, importProgressJson } from "../state.js";
 import { LEVELS } from "../levels.js";
 import { el, confirmModal, toast } from "../ui.js";
 
@@ -29,17 +29,61 @@ export async function renderProgress({ navigate }) {
     ]);
   }));
 
-  const exportBtn = el("button", { class: "btn btn-ghost btn-sm" }, "⬇ Export Progress (JSON)");
-  exportBtn.addEventListener("click", () => {
-    const blob = new Blob([exportProgressJson()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+  const exportBtn = el("button", { class: "btn btn-ghost btn-sm" }, "⬇ Export / Kirim Progress");
+  exportBtn.addEventListener("click", async () => {
+    const filename = "mysql-quest-progress.json";
+    const file = new File([exportProgressJson()], filename, { type: "application/json" });
+
+    // On phones/tablets, hand off to the native share sheet (WhatsApp, Email,
+    // Google Drive, Save to Files, ...) so the student doesn't have to hunt
+    // for the file in Downloads before they can send it to another device.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "MYSQL QUEST — Progress",
+          text: "File progress MYSQL QUEST. Buka file ini lagi lewat tombol Import di device lain untuk melanjutkan.",
+        });
+        return;
+      } catch (e) {
+        if (e && e.name === "AbortError") return; // user closed the share sheet
+        // otherwise fall through to plain download below
+      }
+    }
+
+    const url = URL.createObjectURL(file);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "mysql-quest-progress.json";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    toast("File progress diunduh. Kirim file ini ke diri sendiri (email/WhatsApp/Drive) untuk dibuka di device lain.");
+  });
+
+  const importInput = el("input", { type: "file", accept: "application/json,.json", style: "display:none;" });
+  const importBtn = el("button", { class: "btn btn-ghost btn-sm" }, "⬆ Import Progress (JSON)");
+  importBtn.addEventListener("click", () => importInput.click());
+  importInput.addEventListener("change", async () => {
+    const file = importInput.files[0];
+    importInput.value = "";
+    if (!file) return;
+    const ok = await confirmModal({
+      title: "Import Progress?",
+      body: "Progress pada browser ini (XP, badge, mastery, portfolio) akan DIGANTI dengan isi file yang dipilih. Tindakan ini tidak dapat dibatalkan. Pastikan file ini hasil Export Progress (JSON) dari MYSQL QUEST.",
+      confirmLabel: "Ya, Import & Ganti",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      const text = await file.text();
+      importProgressJson(text);
+      toast("Progress berhasil di-import. Melanjutkan dari data yang diimpor.");
+      navigate("dashboard");
+    } catch (e) {
+      toast(e.message || "Gagal import progress.", "err");
+    }
   });
 
   const resetBtn = el("button", { class: "btn btn-danger btn-sm" }, "🗑 Reset Seluruh Progress");
@@ -60,7 +104,18 @@ export async function renderProgress({ navigate }) {
     ]),
     el("div", { class: "card", style: "margin-top:12px;" }, [el("div", { class: "section-title" }, "Mastery per CPMK"), cpmkList]),
     el("div", { class: "card", style: "margin-top:12px;" }, [el("div", { class: "section-title" }, "Mastery per Level"), levelList]),
-    el("div", { class: "card", style: "margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;" }, [exportBtn, resetBtn]),
+    el("div", { class: "card", style: "margin-top:12px;" }, [
+      el("div", { class: "section-title" }, "Lanjutkan di Device Lain"),
+      el("p", { style: "margin:0 0 10px;font-size:12.5px;color:var(--text-dim);" }, [
+        "Progress tersimpan per-browser. Untuk lanjut mengerjakan di HP/laptop atau browser lain: tekan ",
+        el("b", {}, "Export / Kirim Progress"),
+        " — di HP akan muncul menu \"Bagikan\" (kirim ke WhatsApp/Email/Drive sendiri), di laptop file akan terunduh. Lalu buka MYSQL QUEST di device tujuan dan tekan ",
+        el("b", {}, "Import Progress (JSON)"),
+        ", pilih file tadi.",
+      ]),
+      el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;" }, [exportBtn, importBtn, importInput]),
+    ]),
+    el("div", { class: "card", style: "margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;" }, [resetBtn]),
     el("div", { class: "tag-note", style: "margin-top:12px;" }, "Dashboard ini dihitung dari data lokal di browser Anda. Versi produksi berikutnya dapat menambahkan dashboard kelas untuk dosen (lihat Blueprint §21) setelah tersedia backend."),
   ]);
 }

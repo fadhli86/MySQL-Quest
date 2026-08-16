@@ -39,17 +39,21 @@ function defaultState() {
   };
 }
 
+// shallow-merge so new levels added by content updates still appear
+function mergeWithDefault(parsed) {
+  const def = defaultState();
+  for (const lv of LEVELS) {
+    if (!parsed.levels[lv.id]) parsed.levels[lv.id] = def.levels[lv.id];
+  }
+  return { ...def, ...parsed, levels: { ...def.levels, ...parsed.levels } };
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    const def = defaultState();
-    // shallow-merge so new levels added by content updates still appear
-    for (const lv of LEVELS) {
-      if (!parsed.levels[lv.id]) parsed.levels[lv.id] = def.levels[lv.id];
-    }
-    return { ...def, ...parsed, levels: { ...def.levels, ...parsed.levels } };
+    return mergeWithDefault(parsed);
   } catch (e) {
     console.warn("State load failed, resetting.", e);
     return defaultState();
@@ -58,14 +62,34 @@ function load() {
 
 let state = load();
 const listeners = new Set();
+let persistBroken = false;
 
+// localStorage.setItem throws in Safari private-browsing (older versions),
+// or when the quota is full — without this, every action that saves
+// progress (submit, draft autosave, XP...) would throw silently and the
+// student would lose work with no indication anything went wrong.
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    persistBroken = false;
+  } catch (e) {
+    if (!persistBroken) {
+      persistBroken = true;
+      console.warn("Gagal menyimpan progress ke localStorage.", e);
+    }
+  }
   listeners.forEach((fn) => fn(state));
 }
 
 export function getState() {
   return state;
+}
+
+// True once a save attempt has failed (storage full / disabled / private
+// mode). Views can surface this once so the student knows progress isn't
+// being kept, instead of finding out only after closing the tab.
+export function isPersistBroken() {
+  return persistBroken;
 }
 
 export function subscribe(fn) {
@@ -74,7 +98,7 @@ export function subscribe(fn) {
 }
 
 export function setStudentName(name) {
-  state.studentName = name;
+  state.studentName = String(name || "").trim().slice(0, 40);
   persist();
 }
 
@@ -316,4 +340,22 @@ export function resetAllProgress() {
 
 export function exportProgressJson() {
   return JSON.stringify(state, null, 2);
+}
+
+// Restores progress from a previously exported JSON file, so a student can
+// continue on a different browser/device without a backend. Replaces
+// progress on this device entirely — caller is responsible for confirming
+// with the user before calling this, since it's destructive.
+export function importProgressJson(json) {
+  let parsed;
+  try {
+    parsed = JSON.parse(json);
+  } catch (e) {
+    throw new Error("File tidak valid (bukan JSON).");
+  }
+  if (!parsed || typeof parsed !== "object" || !parsed.levels || typeof parsed.levels !== "object") {
+    throw new Error("Struktur data progress tidak dikenali. Pastikan file ini hasil Export Progress dari MYSQL QUEST.");
+  }
+  state = mergeWithDefault(parsed);
+  persist();
 }

@@ -57,13 +57,43 @@ function splitStatements(sql) {
 }
 
 let SQLPromise = null;
+const SQL_LOAD_TIMEOUT_MS = 20000;
+const SQL_JS_SRC = "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js";
 
+// The <script> tag for sql.js lives in index.html and only ever attempts to
+// load once at page load. If that attempt failed (CDN blocked at that
+// moment, hiccup, ...), window.initSqlJs stays undefined forever — clicking
+// "Coba Lagi" would just keep failing with no real retry happening. This
+// injects a fresh <script> so a retry is an actual new network attempt.
+function injectSqlJsScript() {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = SQL_JS_SRC;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Komponen sql.js gagal dimuat dari CDN."));
+    document.head.appendChild(s);
+  });
+}
+
+// Loads the sql.js WASM runtime from CDN. On failure (CDN blocked/down,
+// slow network) the cached promise is cleared so the next call — e.g. the
+// student clicking "Coba Lagi" on the error screen — actually retries
+// instead of replaying the same rejection forever.
 function loadSQL() {
-  if (!SQLPromise) {
-    SQLPromise = window.initSqlJs({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}`,
-    });
-  }
+  if (SQLPromise) return SQLPromise;
+  SQLPromise = (async () => {
+    if (typeof window.initSqlJs !== "function") await injectSqlJsScript();
+    if (typeof window.initSqlJs !== "function") throw new Error("Komponen sql.js gagal dimuat dari CDN.");
+    return Promise.race([
+      window.initSqlJs({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}` }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Waktu memuat sql.js habis (timeout) — koneksi internet mungkin terlalu lambat.")), SQL_LOAD_TIMEOUT_MS)
+      ),
+    ]);
+  })().catch((e) => {
+    SQLPromise = null;
+    throw e;
+  });
   return SQLPromise;
 }
 

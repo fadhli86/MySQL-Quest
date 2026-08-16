@@ -18,11 +18,13 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **Hint ladder bertingkat**, XP economy, badge, rank, dan portfolio evidence — sesuai blueprint gameplay.
 - **Boss Battle checkpoint** di Level 3, 7, 10, 13, dan Final Boss di Level 14.
 - **Responsive mobile-first**: navigasi tab (Quest–Editor–Schema–Result) + sticky action bar di HP, workspace 3 panel simultan di desktop — satu basis kode yang sama untuk kedua form factor.
-- **Progress tersimpan otomatis** di `localStorage` browser (autosave draft kode, attempt, mastery, XP, badge).
+- **Progress tersimpan otomatis** di `localStorage` browser (autosave draft kode, attempt, mastery, XP, badge) — bisa dikerjakan perlahan, berhenti kapan saja, dan lanjut lagi nanti dari titik terakhir (ada kartu "Continue Playing" di dashboard).
+- **Export/Import Progress (JSON)** di halaman Learning Progress — karena progress terikat per-browser, gunakan Export lalu Import untuk memindahkan/melanjutkan progress di device atau browser lain. Di HP, tombol Export otomatis membuka menu "Bagikan" native (Web Share API) supaya file bisa langsung dikirim ke WhatsApp/Email/Drive sendiri tanpa perlu mencari file di folder Download.
 - **Learning Progress dashboard**: mastery per CPMK/Sub-CPMK, mirip §14 Grand Design.
 - **Sertifikat kelulusan** (setelah 14 level selesai) — dirender ke `<canvas>`, diunduh sebagai PNG, ditandatangani dosen pengampu, dilengkapi **QR code tanda tangan digital** yang mengarah ke halaman verifikasi (`verify.html`) untuk memeriksa konsistensi data sertifikat.
 - **SQL Playground** bebas dengan seluruh dataset kampus, untuk eksplorasi di luar quest.
 - **Materi kuliah lengkap 14 pertemuan** (folder [`materi/`](materi/README.md)) — modul ajar mendalam bergaya diktat/handout per pertemuan (konsep, sintaks MySQL 8 asli, studi kasus, best practice terkini, latihan mandiri), terhubung ke masing-masing level lewat halaman Panduan Bermain di dalam game. Tersedia juga sebagai satu dokumen Word siap cetak: [`Modul_Ajar_Database_MySQL_14_Pertemuan.docx`](materi/Modul_Ajar_Database_MySQL_14_Pertemuan.docx). Lihat perbedaannya dengan microlearning di dalam game pada [materi/README.md](materi/README.md).
+- **Tahan gangguan jaringan/CDN**: kalau koneksi lambat atau CDN (sql.js/CodeMirror) terblokir jaringan kampus, aplikasi menampilkan pesan error yang jelas dengan tombol "Coba Lagi" alih-alih macet di layar kosong. Progress juga tetap aman kalau `localStorage` browser tidak bisa dipakai (mis. mode private) — mahasiswa diberi tahu lewat notifikasi, bukan kehilangan data secara diam-diam. Aset CDN dilengkapi Subresource Integrity (SRI) untuk keamanan tambahan.
 
 ## 🧱 Arsitektur & Batasan yang Disengaja
 
@@ -31,7 +33,7 @@ Dokumen blueprint asli merancang arsitektur dengan backend penuh: SQL Execution 
 | Aspek | Blueprint asli | Implementasi saat ini |
 |---|---|---|
 | SQL engine | MySQL server, sandbox per mahasiswa | **SQLite via sql.js (WebAssembly)**, berjalan di browser masing-masing. Sintaks inti (SELECT/JOIN/GROUP BY/subquery/VIEW/INDEX/TRIGGER/transaction) sama dengan MySQL; `PROCEDURE`/`FUNCTION` MySQL tidak didukung SQLite — Level 13 memakai `TRIGGER` (didukung keduanya) untuk latihan langsung, sintaks `PROCEDURE` ditampilkan sebagai referensi saja. |
-| Progress & auth | Login, akun, sinkron lintas perangkat via server | **localStorage per-browser**, tanpa akun sungguhan (nama hanya untuk personalisasi tampilan). Progress **tidak** sinkron lintas perangkat/browser. |
+| Progress & auth | Login, akun, sinkron lintas perangkat via server | **localStorage per-browser**, tanpa akun sungguhan (nama hanya untuk personalisasi tampilan). Progress **tidak** sinkron otomatis lintas perangkat/browser — pindah device pakai Export/Import JSON manual (halaman Learning Progress). |
 | Efficiency & Interpretation (rubrik mastery) | Analisis query plan mendalam + NLP | Heuristik ringan (mis. deteksi query tanpa `WHERE`) — didokumentasikan di `js/grader.js`. |
 | Dashboard Dosen / OBE analytics kelas | Live, multi-mahasiswa | Belum ada di versi ini (butuh backend). Learning Progress yang ada bersifat per-mahasiswa (device lokal). |
 
@@ -92,7 +94,7 @@ Tidak perlu langkah build/Actions apa pun — repo ini murni file statis.
 
 ## 🔒 Privasi & Data
 
-Tidak ada data yang dikirim ke server mana pun selain memuat asset statis (HTML/CSS/JS/CDN). Seluruh progress belajar (XP, jawaban, mastery) tersimpan di `localStorage` browser mahasiswa sendiri. Tombol **Export Progress (JSON)** di halaman *Learning Progress* memungkinkan mahasiswa menyimpan/mengirimkan bukti progress secara manual bila dosen memerlukannya sebagai evidence sebelum tersedia backend terpusat.
+Tidak ada data yang dikirim ke server mana pun selain memuat asset statis (HTML/CSS/JS/CDN). Seluruh progress belajar (XP, jawaban, mastery) tersimpan di `localStorage` browser mahasiswa sendiri. Tombol **Export Progress (JSON)** di halaman *Learning Progress* memungkinkan mahasiswa menyimpan/mengirimkan bukti progress secara manual bila dosen memerlukannya sebagai evidence sebelum tersedia backend terpusat, dan tombol **Import Progress (JSON)** di halaman yang sama memungkinkan mahasiswa memuat kembali file tersebut untuk melanjutkan progress di device/browser lain (menggantikan seluruh progress lokal yang ada — akan diminta konfirmasi sebelum diterapkan).
 
 ## 📚 Sumber
 

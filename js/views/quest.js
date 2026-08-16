@@ -184,28 +184,60 @@ export async function renderQuest({ navigate, levelId }) {
 
   function renderQuiz(stage) {
     const sp = getStageProgress(level.id, stage.id);
-    const alreadyAnswered = sp.status === "passed";
+    const alreadyPassed = sp.status === "passed";
     const wrap = el("div", {});
-    stage.options.forEach((opt, i) => {
-      const btn = el("button", { class: "quiz-opt", disabled: alreadyAnswered }, opt);
-      if (alreadyAnswered && i === stage.correctIndex) btn.classList.add("correct");
-      btn.addEventListener("click", () => {
-        const result = gradeQuizStage(stage, i);
-        Array.from(wrap.children).forEach((b, bi) => {
-          b.disabled = true;
-          if (bi === stage.correctIndex) b.classList.add("correct");
-          else if (bi === i && !result.passed) b.classList.add("wrong");
-        });
-        toast(result.message, result.passed ? "" : "err");
-        if (result.passed) {
-          const r = completeUngradedStage(level, stage);
-          if (r.xpAwarded) showXpToast(r.xpAwarded, stage.title);
-        }
-        renderHeader();
-        setTimeout(() => renderQuestPanel(), 350);
+    wrap.appendChild(el("div", { class: "quiz-instruction" }, "👉 Pilih salah satu jawaban di bawah ini:"));
+    const optsWrap = el("div", { class: "quiz-opts" });
+    const feedbackWrap = el("div", {});
+    wrap.append(optsWrap, feedbackWrap);
+
+    function renderOptions(locked, wrongIndex) {
+      clear(optsWrap);
+      stage.options.forEach((opt, i) => {
+        const btn = el("button", { class: "quiz-opt", disabled: locked }, opt);
+        if (locked && i === stage.correctIndex) btn.classList.add("correct");
+        if (locked && i === wrongIndex) btn.classList.add("wrong");
+        btn.addEventListener("click", () => onAnswer(i));
+        optsWrap.appendChild(btn);
       });
-      wrap.appendChild(btn);
-    });
+    }
+
+    function renderFeedback(passed, message) {
+      clear(feedbackWrap);
+      const box = el("div", { class: `feedback-box ${passed ? "pass" : "fail"}`, style: "margin-top:10px;" }, [
+        el("div", { class: "fb-title" }, passed ? "✅ Jawaban Benar" : "❌ Belum Tepat"),
+        el("p", { style: "margin:0;" }, message),
+      ]);
+      if (passed) {
+        const isLast = level.stages[level.stages.length - 1].id === stage.id;
+        const nextBtn = el(
+          "button",
+          { class: "btn btn-submit btn-sm", style: "margin-top:10px;" },
+          isLast ? "Selesai — Kembali ke Journey →" : "Lanjut ke Tahap Berikutnya →"
+        );
+        nextBtn.addEventListener("click", () => (isLast ? navigate("journey") : advanceStageIfPossible()));
+        box.appendChild(nextBtn);
+      } else {
+        const retryBtn = el("button", { class: "btn btn-ghost btn-sm", style: "margin-top:10px;" }, "🔁 Coba Lagi");
+        retryBtn.addEventListener("click", () => { clear(feedbackWrap); renderOptions(false); });
+        box.appendChild(retryBtn);
+      }
+      feedbackWrap.appendChild(box);
+    }
+
+    function onAnswer(i) {
+      const result = gradeQuizStage(stage, i);
+      renderOptions(true, result.passed ? null : i);
+      renderFeedback(result.passed, result.message);
+      if (result.passed) {
+        const r = completeUngradedStage(level, stage);
+        if (r.xpAwarded) showXpToast(r.xpAwarded, stage.title);
+      }
+      renderHeader();
+    }
+
+    renderOptions(alreadyPassed, null);
+    if (alreadyPassed) renderFeedback(true, stage.explainCorrect || "Jawaban tepat.");
     return wrap;
   }
 

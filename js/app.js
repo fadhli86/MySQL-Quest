@@ -1,5 +1,5 @@
-import { getState, subscribe, getRank, setStudentName } from "./state.js";
-import { el, clear, promptModal } from "./ui.js";
+import { getState, subscribe, getRank, setStudentName, isPersistBroken } from "./state.js";
+import { el, clear, promptModal, toast } from "./ui.js";
 import { initTheme, toggleTheme, currentEffectiveTheme } from "./theme.js";
 import { renderDashboard } from "./views/dashboard.js";
 import { renderJourney } from "./views/journey.js";
@@ -144,6 +144,38 @@ function renderBottomNav(activeRoute) {
   }
 }
 
+function renderLoadingState() {
+  return el("div", { class: "page" }, [
+    el("div", { class: "empty-state" }, [el("div", { class: "spinner" }), el("p", {}, "Memuat...")]),
+  ]);
+}
+
+// CDN/network failures (sql.js, CodeMirror, ...) and timeouts surface here
+// with a message a student can act on; anything else falls back to a
+// generic "coba lagi" so a bug in one view never leaves a blank page.
+function errorMessageFor(err) {
+  const msg = String((err && err.message) || err || "");
+  if (/sql\.js|initSqlJs|sql-wasm|timeout|waktu memuat/i.test(msg)) {
+    return "Gagal memuat komponen SQL Sandbox. Ini biasanya karena koneksi internet lambat/terputus, atau jaringan (mis. WiFi kampus) memblokir akses ke CDN. Periksa koneksi Anda, lalu coba lagi.";
+  }
+  if (/failed to fetch|networkerror|net::/i.test(msg)) {
+    return "Gagal memuat data — periksa koneksi internet Anda, lalu coba lagi.";
+  }
+  return "Terjadi kendala tak terduga saat memuat halaman ini. Coba lagi — jika masih gagal, muat ulang (refresh) browser.";
+}
+
+function renderErrorState(err, onRetry) {
+  console.error("Render error:", err);
+  return el("div", { class: "page page-narrow" }, [
+    el("div", { class: "empty-state" }, [
+      el("div", { class: "ic" }, "⚠️"),
+      el("h3", {}, "Terjadi Kendala"),
+      el("p", {}, errorMessageFor(err)),
+      el("button", { class: "btn btn-primary", onclick: onRetry }, "🔄 Coba Lagi"),
+    ]),
+  ]);
+}
+
 async function renderRoute() {
   const { route, param } = parseHash();
   renderTopbar(route);
@@ -155,45 +187,53 @@ async function renderRoute() {
   refs.content.classList.toggle("no-bottom-pad", route === "quest");
   refs.content.scrollTop = 0;
   window.scrollTo(0, 0);
+  refs.content.style.padding = "";
+  refs.content.appendChild(renderLoadingState());
 
   const mount = (node) => {
+    clear(refs.content);
     node.classList.add("page-enter");
     refs.content.appendChild(node);
   };
 
-  switch (route) {
-    case "journey":
-      mount(await renderJourney({ navigate }));
-      break;
-    case "quest":
-      refs.content.style.padding = "0";
-      mount(await renderQuest({ navigate, levelId: Number(param) }));
-      break;
-    case "achievements":
-      mount(await renderAchievements({ navigate }));
-      break;
-    case "portfolio":
-      mount(await renderPortfolio({ navigate }));
-      break;
-    case "progress":
-      mount(await renderProgress({ navigate }));
-      break;
-    case "playground":
-      refs.content.style.padding = "0";
-      mount(await renderPlayground({ navigate }));
-      break;
-    case "help":
-      mount(await renderHelp({ navigate }));
-      break;
-    case "certificate":
-      mount(await renderCertificate({ navigate }));
-      break;
-    case "dashboard":
-    default:
-      mount(await renderDashboard({ navigate }));
-      break;
+  try {
+    switch (route) {
+      case "journey":
+        mount(await renderJourney({ navigate }));
+        break;
+      case "quest":
+        refs.content.style.padding = "0";
+        mount(await renderQuest({ navigate, levelId: Number(param) }));
+        break;
+      case "achievements":
+        mount(await renderAchievements({ navigate }));
+        break;
+      case "portfolio":
+        mount(await renderPortfolio({ navigate }));
+        break;
+      case "progress":
+        mount(await renderProgress({ navigate }));
+        break;
+      case "playground":
+        refs.content.style.padding = "0";
+        mount(await renderPlayground({ navigate }));
+        break;
+      case "help":
+        mount(await renderHelp({ navigate }));
+        break;
+      case "certificate":
+        mount(await renderCertificate({ navigate }));
+        break;
+      case "dashboard":
+      default:
+        mount(await renderDashboard({ navigate }));
+        break;
+    }
+    if (route !== "quest" && route !== "playground") refs.content.style.padding = "";
+  } catch (err) {
+    refs.content.style.padding = "";
+    mount(renderErrorState(err, () => renderRoute()));
   }
-  if (route !== "quest" && route !== "playground") refs.content.style.padding = "";
 }
 
 async function ensureOnboarding() {
@@ -203,17 +243,32 @@ async function ensureOnboarding() {
     title: "Selamat datang di MYSQL QUEST 👋",
     body: "Siapa nama/panggilan Anda? (opsional — hanya untuk personalisasi tampilan, disimpan di browser ini saja, bukan akun/login).",
     placeholder: "Nama Anda",
+    maxLength: 40,
   });
   setStudentName(name || "Junior Engineer");
   return true;
 }
 
+let persistWarningShown = false;
 subscribe(() => {
   const { route } = parseHash();
   renderTopbar(route);
+  if (isPersistBroken() && !persistWarningShown) {
+    persistWarningShown = true;
+    toast("⚠ Progress tidak bisa disimpan di browser ini (mode private/storage penuh). Jangan tutup tab ini sebelum selesai.", "err");
+  }
 });
 
 window.addEventListener("hashchange", renderRoute);
+
+// Safety net for errors that happen outside the render flow above (e.g. an
+// async click handler like "Reset Sandbox" hitting a CDN/network failure
+// after the page already mounted) — surface a toast instead of failing
+// silently in the console.
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("Unhandled rejection:", e.reason);
+  toast(errorMessageFor(e.reason), "err");
+});
 
 (async function init() {
   initTheme();
