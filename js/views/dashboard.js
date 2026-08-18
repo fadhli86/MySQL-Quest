@@ -89,6 +89,7 @@ export async function renderDashboard({ navigate }) {
       el("a", { href: "#/progress", style: "color:var(--brand);font-weight:700;" }, "Learning Progress"),
       ".",
     ]),
+    el("div", { style: "margin-top:14px;font-size:10.5px;color:var(--text-faint);text-align:center;" }, "© Ahda Development 2026"),
   ]);
 
   return page;

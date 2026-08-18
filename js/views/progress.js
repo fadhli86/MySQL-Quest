@@ -98,6 +98,11 @@ export async function renderProgress({ navigate }) {
   return el("div", { class: "page page-narrow" }, [
     el("h2", {}, "Learning Progress"),
     el("div", { class: "card" }, [
+      el("div", { class: "section-title" }, "Laporan untuk Dosen Pengampu"),
+      el("p", { style: "margin:0 0 10px;font-size:12.5px;color:var(--text-dim);" }, "Butuh rekap nilai untuk diserahkan ke dosen pengampu? Cetak/unduh laporan evaluasi yang sudah dalam bentuk nilai per level & CPMK."),
+      el("button", { class: "btn btn-primary btn-sm", onclick: () => navigate("laporan") }, "📊 Lihat Laporan Evaluasi (Nilai) →"),
+    ]),
+    el("div", { class: "card", style: "margin-top:12px;" }, [
       el("div", { class: "section-title" }, "Course Progress"),
       el("div", { class: "progress-track" }, [el("div", { class: "progress-fill good", style: `width:${overall}%` })]),
       el("div", { style: "margin-top:6px;font-size:12.5px;color:var(--text-dim);" }, `${overall}% dari 14 level`),

@@ -10,13 +10,15 @@ import { renderProgress } from "./views/progress.js";
 import { renderPlayground } from "./views/playground.js";
 import { renderHelp } from "./views/help.js";
 import { renderCertificate } from "./views/certificate.js";
+import { renderLaporan } from "./views/laporan.js";
+import { renderRekapKelas } from "./views/rekapKelas.js";
 
 const NAV_ITEMS = [
   { route: "dashboard", icon: "🏠", label: "Home" },
   { route: "journey", icon: "🗺️", label: "Journey" },
   { route: "playground", icon: "⌨️", label: "Play" },
   { route: "progress", icon: "📈", label: "Progress" },
-  { route: "achievements", icon: "🏅", label: "More", extraRoutes: ["achievements", "portfolio", "certificate"] },
+  { route: "achievements", icon: "🏅", label: "More", extraRoutes: ["achievements", "portfolio", "certificate", "laporan"] },
 ];
 
 const app = document.getElementById("app");
@@ -118,6 +120,9 @@ function renderSidebar(activeRoute) {
     el("button", { class: `nav-item${activeRoute === "certificate" ? " active" : ""}`, onclick: () => navigate("certificate") }, [el("span", { class: "ic" }, "🎓"), "Sertifikat"])
   );
   refs.sidebar.appendChild(
+    el("button", { class: `nav-item${activeRoute === "laporan" ? " active" : ""}`, onclick: () => navigate("laporan") }, [el("span", { class: "ic" }, "📊"), "Laporan Nilai"])
+  );
+  refs.sidebar.appendChild(
     el("button", { class: `nav-item${activeRoute === "help" ? " active" : ""}`, onclick: () => navigate("help") }, [el("span", { class: "ic" }, "❓"), "Panduan"])
   );
   refs.sidebar.appendChild(
@@ -125,6 +130,9 @@ function renderSidebar(activeRoute) {
       el("span", { class: "ic" }, themeIcon(currentEffectiveTheme())),
       "Tema",
     ])
+  );
+  refs.sidebar.appendChild(
+    el("div", { class: "sidebar-copyright" }, "© Ahda Development 2026")
   );
 }
 
@@ -224,6 +232,12 @@ async function renderRoute() {
       case "certificate":
         mount(await renderCertificate({ navigate }));
         break;
+      case "laporan":
+        mount(await renderLaporan({ navigate }));
+        break;
+      case "rekap-kelas":
+        mount(await renderRekapKelas({ navigate }));
+        break;
       case "dashboard":
       default:
         mount(await renderDashboard({ navigate }));
@@ -237,6 +251,10 @@ async function renderRoute() {
 }
 
 async function ensureOnboarding() {
+  // Rekap Kelas is the dosen-only route (PIN-gated) — the "what's your
+  // name" modal would otherwise sit on top of and block the PIN input on a
+  // browser that's never opened the game before.
+  if (parseHash().route === "rekap-kelas") return false;
   const s = getState();
   if (s.studentName) return false;
   const name = await promptModal({

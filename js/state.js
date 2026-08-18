@@ -27,6 +27,7 @@ function defaultState() {
   return {
     version: 1,
     studentName: "",
+    studentNim: "",
     xp: 0,
     xpLog: [],
     levels,
@@ -99,6 +100,11 @@ export function subscribe(fn) {
 
 export function setStudentName(name) {
   state.studentName = String(name || "").trim().slice(0, 40);
+  persist();
+}
+
+export function setStudentNim(nim) {
+  state.studentNim = String(nim || "").trim().slice(0, 30);
   persist();
 }
 
