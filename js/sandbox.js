@@ -84,12 +84,15 @@ function loadSQL() {
   SQLPromise = (async () => {
     if (typeof window.initSqlJs !== "function") await injectSqlJsScript();
     if (typeof window.initSqlJs !== "function") throw new Error("Komponen sql.js gagal dimuat dari CDN.");
-    return Promise.race([
-      window.initSqlJs({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}` }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Waktu memuat sql.js habis (timeout) — koneksi internet mungkin terlalu lambat.")), SQL_LOAD_TIMEOUT_MS)
-      ),
-    ]);
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Waktu memuat sql.js habis (timeout) — koneksi internet mungkin terlalu lambat.")), SQL_LOAD_TIMEOUT_MS);
+    });
+    try {
+      return await Promise.race([window.initSqlJs({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}` }), timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
   })().catch((e) => {
     SQLPromise = null;
     throw e;

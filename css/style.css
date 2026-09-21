@@ -436,6 +436,15 @@ table.result-table tr:last-child td { border-bottom: none; }
 .feedback-box .fb-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
 .feedback-box.pass .fb-title { color: var(--good); }
 .feedback-box.fail .fb-title { color: var(--bad); }
+.diff-box { border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--border-soft); background: var(--bg-panel); font-size: 13px; }
+.diff-title { font-weight: 800; margin-bottom: 8px; }
+.diff-line { margin-bottom: 4px; color: var(--text-dim); }
+.diff-k { display: inline-block; min-width: 96px; font-weight: 700; color: var(--text); }
+.diff-section-label { margin: 10px 0 4px; font-weight: 700; font-size: 12px; }
+.diff-section-label.diff-miss, span.diff-miss { color: var(--bad); }
+.diff-section-label.diff-extra, span.diff-extra { color: var(--warn, #d97706); }
+table.diff-table.diff-miss td { background: rgba(251,113,133,.08); }
+table.diff-table.diff-extra td { background: rgba(245,158,11,.10); }
 .fb-breakdown { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .fb-metric { flex: 1; min-width: 90px; background: var(--bg-elevated); border-radius: var(--radius-sm); padding: 8px 10px; }
 .fb-metric .v { font-weight: 800; font-size: 15px; }

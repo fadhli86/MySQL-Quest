@@ -15,6 +15,7 @@ import {
 } from "../state.js";
 import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.js";
 import { celebrateLevelComplete } from "../confetti.js";
+import { shuffledOptionOrder } from "../quiz-utils.js";
 
 const TABS = [
   { id: "quest", label: "Quest", icon: "📜" },
@@ -191,11 +192,20 @@ export async function renderQuest({ navigate, levelId }) {
     const feedbackWrap = el("div", {});
     wrap.append(optsWrap, feedbackWrap);
 
+    // Display order is shuffled (authored order always has the answer first);
+    // `i` below stays the ORIGINAL index so grading is unaffected.
+    const order = shuffledOptionOrder(stage.options.length, `${level.id}:${stage.id}:${getState().studentName}`);
+
     function renderOptions(locked, wrongIndex) {
       clear(optsWrap);
-      stage.options.forEach((opt, i) => {
+      order.forEach((i) => {
+        const opt = stage.options[i];
         const btn = el("button", { class: "quiz-opt", disabled: locked }, opt);
-        if (locked && i === stage.correctIndex) btn.classList.add("correct");
+        // The right answer is only revealed once it has been answered
+        // correctly (or the stage was already passed) — after a wrong pick
+        // the student must reason from the explanation, not read the answer
+        // off the highlighted option and "retry" into it.
+        if (locked && i === stage.correctIndex && (wrongIndex === null || wrongIndex === undefined)) btn.classList.add("correct");
         if (locked && i === wrongIndex) btn.classList.add("wrong");
         btn.addEventListener("click", () => onAnswer(i));
         optsWrap.appendChild(btn);
@@ -492,19 +502,64 @@ export async function renderQuest({ navigate, levelId }) {
     ]);
     if (gradeResult.breakdown) {
       const bd = gradeResult.breakdown;
-      box.appendChild(
-        el("div", { class: "fb-breakdown" }, [
-          metric("Correctness", bd.correctness),
-          metric("Concept", bd.concept),
-          metric("Efficiency", bd.efficiency),
-          metric("Interpretation", bd.interpretation),
-        ])
-      );
+      // Only components this stage actually assessed (non-null) are shown.
+      const metrics = [
+        ["Correctness", bd.correctness],
+        ["Concept", bd.concept],
+        ["Efficiency", bd.efficiency],
+        ["Interpretation", bd.interpretation],
+      ].filter(([, v]) => v !== null && v !== undefined);
+      box.appendChild(el("div", { class: "fb-breakdown" }, metrics.map(([label, v]) => metric(label, v))));
       box.appendChild(el("div", { style: "margin-top:10px;font-weight:800;font-size:13px;" }, `Skor: ${gradeResult.score}%`));
     }
     panelResult.appendChild(box);
+    if (gradeResult.diff) panelResult.appendChild(renderDiff(gradeResult.diff));
     if (execResult && execResult.ok) panelResult.appendChild(renderResultTable(execResult.results));
     else if (execResult) panelResult.appendChild(el("div", { class: "error-box" }, humanizeSqlError(execResult.error)));
+  }
+
+  // Shows what differs between the student's result and the target:
+  // columns side by side, plus the rows the target has that the student's
+  // result lacks (missing) and rows it has that the target doesn't (extra).
+  // Row lists are already capped by the grader.
+  function renderDiff(diff) {
+    const box = el("div", { class: "diff-box" }, [el("div", { class: "diff-title" }, "🔍 Perbandingan dengan target")]);
+    const sameCols = diff.expectedColumns.join("|").toLowerCase() === diff.actualColumns.join("|").toLowerCase();
+    box.appendChild(
+      el("div", { class: "diff-line" }, [
+        el("span", { class: "diff-k" }, "Kolom"),
+        sameCols
+          ? el("span", {}, `${diff.expectedColumns.join(", ")} ✓`)
+          : el("span", {}, [el("span", { class: "diff-miss" }, `target: ${diff.expectedColumns.join(", ")}`), " · ", el("span", { class: "diff-extra" }, `Anda: ${diff.actualColumns.join(", ") || "-"}`)]),
+      ])
+    );
+    box.appendChild(
+      el("div", { class: "diff-line" }, [
+        el("span", { class: "diff-k" }, "Jumlah baris"),
+        el("span", {}, `target ${diff.expectedRowCount} · Anda ${diff.actualRowCount}`),
+      ])
+    );
+    if (diff.columnsOnly) {
+      box.appendChild(el("div", { class: "diff-line" }, "Samakan dulu kolom hasil dengan target — perbandingan isi baris dilewati sampai jumlah kolomnya sama."));
+      return box;
+    }
+    if (diff.orderOnly) {
+      box.appendChild(el("div", { class: "diff-line" }, "Isi data sudah sama dengan target — hanya urutannya yang berbeda."));
+      return box;
+    }
+    const section = (label, cls, columns, rows, total) => {
+      if (!rows.length) return;
+      const table = el("table", { class: `result-table diff-table ${cls}` }, [
+        el("thead", {}, [el("tr", {}, columns.map((c) => el("th", {}, c)))]),
+        el("tbody", {}, rows.map((r) => el("tr", {}, r.map((v) => el("td", {}, v))))),
+      ]);
+      box.appendChild(el("div", { class: `diff-section-label ${cls}` }, `${label} (${total})`));
+      box.appendChild(el("div", { class: "table-scroll" }, table));
+      if (total > rows.length) box.appendChild(el("div", { class: "tag-note" }, `Menampilkan ${rows.length} dari ${total} baris.`));
+    };
+    section("Baris target yang belum ada di hasil Anda", "diff-miss", diff.expectedColumns, diff.missingRows, diff.missingTotal);
+    section("Baris di hasil Anda yang tidak ada di target", "diff-extra", diff.actualColumns, diff.extraRows, diff.extraTotal);
+    return box;
   }
 
   function metric(label, value) {
