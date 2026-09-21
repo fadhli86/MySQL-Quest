@@ -1,5 +1,6 @@
 import { Sandbox, humanizeSqlError } from "../sandbox.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
+import { openCheatSheet } from "../cheatsheet.js";
 import { el, clear, confirmModal, toast } from "../ui.js";
 
 const PLAYGROUND_SQL = `
@@ -127,6 +128,7 @@ export async function renderPlayground() {
 
   const toolbar = el("div", { class: "editor-toolbar" }, [
     el("button", { class: "btn btn-sm btn-danger" }, "🗄 Reset Sandbox"),
+    el("button", { class: "btn btn-sm btn-ghost", onclick: () => openCheatSheet() }, "📖 Cheat Sheet"),
   ]);
   const cmHost = el("div", {});
   const editorWrap = el("div", { class: "editor-wrap" }, [cmHost]);

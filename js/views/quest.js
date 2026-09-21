@@ -13,11 +13,14 @@ import {
   submitStageResult,
   completeUngradedStage,
   recordQuizMiss,
+  markTourSeen,
 } from "../state.js";
 import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.js";
 import { celebrateLevelComplete } from "../confetti.js";
 import { shuffledOptionOrder } from "../quiz-utils.js";
 import { MYSQL_NOTES } from "../mysql-notes.js";
+import { openCheatSheet } from "../cheatsheet.js";
+import { runTour } from "../tour.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 
 const TABS = [
@@ -103,7 +106,30 @@ export async function renderQuest({ navigate, levelId }) {
     header.append(
       el("button", { class: "back-btn", onclick: () => navigate("journey") }, "← Journey"),
       el("div", { class: "qtitle" }, `Lv.${level.id} ${level.title} — ${level.questTitle}`),
+      el("div", { class: "hdr-tools" }, [
+        el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Cheat Sheet SQL", "aria-label": "Buka Cheat Sheet SQL", onclick: () => openCheatSheet({ currentLevel: level.id }) }, "📖"),
+        el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Tur singkat layar ini", "aria-label": "Mulai tur singkat layar ini", onclick: startTour }, "🧭"),
+      ]),
       el("div", { class: "qmastery", title: "Mastery level ini", "aria-label": `Mastery level ini ${ls.mastery} persen` }, `${ls.mastery}%`)
+    );
+  }
+
+  // -------------------------------------------------------------- guided tour
+  // Runs automatically once, on the very first entry to Level 1; the 🧭
+  // button in the header replays it any time.
+  function startTour() {
+    const isPhone = () => window.matchMedia("(max-width: 1023px)").matches;
+    const tab = (id) => () => { if (isPhone()) switchTab(id); };
+    runTour(
+      [
+        { title: "📜 Tab Quest", body: "Di sini ada cerita, materi (bisa dibuka lagi kapan saja), dan daftar tahapan. Klik tahapan untuk berpindah; tahapan yang sudah selesai bertanda ✓.", target: ".stage-pill-row", before: tab("quest") },
+        { title: "⌨️ Editor SQL", body: "Pada tahapan bertipe SQL, tulis query di sini. Ketik dua huruf untuk melihat saran nama tabel dan kolom (Tab untuk memilih). Run = mencoba, tidak dinilai dan boleh berkali-kali. Submit = dinilai.", target: "#panel-editor", before: tab("editor") },
+        { title: "🗂️ Schema", body: "Daftar tabel dan kolom yang tersedia beserta contoh datanya. PK = kunci utama. Lihat dulu sebelum menulis query.", target: "#panel-schema", before: tab("schema") },
+        { title: "📊 Result", body: "Hasil query muncul di sini. Setelah Submit Anda mendapat skor dan umpan balik; jika belum tepat, hasil Anda dibandingkan dengan target.", target: "#panel-result", before: tab("result") },
+        { title: "💡 Butuh bantuan?", body: "Pada tahapan SQL, tombol 'Tampilkan Hint Berikutnya' membuka petunjuk bertingkat (memakai hint mengurangi bonus XP). Kuis konsep dijawab langsung di tab Quest.", target: "#panel-quest", before: tab("quest") },
+        { title: "📖 Cheat Sheet & 🧭 Tur", body: "Lupa sintaks? Buka Cheat Sheet SQL kapan saja lewat tombol 📖. Tur ini bisa diulang lewat tombol 🧭. Selamat bermain!", target: ".hdr-tools", before: tab("quest") },
+      ],
+      { onFinish: markTourSeen }
     );
   }
 
@@ -783,6 +809,7 @@ export async function renderQuest({ navigate, levelId }) {
             st.stageId = pickInitialStage(level);
             renderHeader();
             showQuestInterface();
+            if (level.id === 1 && !getState().tourSeen) setTimeout(startTour, 400);
           },
         },
         "Lanjut ke Quest →"

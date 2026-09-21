@@ -349,6 +349,7 @@ button { font-family: inherit; }
   border-bottom: 1px solid var(--border-soft); position: sticky; top: 0; background: var(--header-glass); backdrop-filter: blur(10px); z-index: 30;
 }
 .quest-header .qtitle { font-weight: 800; font-size: 14.5px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quest-header .hdr-tools { display: flex; gap: 2px; flex-shrink: 0; }
 .quest-header .qmastery { font-size: 12px; color: var(--text-dim); font-weight: 700; }
 
 .quest-tabs {
@@ -647,6 +648,27 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 
 /* iOS zooms into inputs below 16px; the page itself can now be zoomed freely. */
 @media (max-width: 1023px) { input, textarea, select { font-size: 16px; } }
+
+/* ---- Cheat sheet dialog + guided tour ------------------------------------ */
+.modal-box.modal-wide { max-width: 720px; max-height: 88vh; overflow-y: auto; }
+.cheat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cheat-search { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text); font-size: 16px; margin-bottom: 10px; }
+.cheat-section { margin-top: 14px; }
+.cheat-section h4 { font-size: 13.5px; color: var(--brand); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+
+.cheat-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg-elevated); color: var(--text-dim); border: 1px solid var(--border); }
+.cheat-item { margin-bottom: 8px; }
+.cheat-item pre.code-block { margin: 0 0 4px; white-space: pre-wrap; }
+.cheat-item p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+.tour-card { position: fixed; left: 50%; transform: translateX(-50%); z-index: 400; width: min(520px, calc(100vw - 24px)); background: var(--bg-panel); border: 2px solid var(--brand); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.tour-card.bottom { bottom: calc(16px + var(--safe-bottom)); }
+.tour-card.top { top: calc(64px + var(--safe-top)); }
+@media (max-width: 1023px) { .tour-card.bottom { bottom: calc(84px + var(--safe-bottom)); } }
+.tour-card h3 { font-size: 16px; margin: 2px 0 6px; outline: none; }
+.tour-body { margin: 0 0 12px; font-size: 14px; line-height: 1.5; }
+.tour-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tour-highlight { outline: 3px solid var(--brand); outline-offset: 3px; border-radius: var(--radius); box-shadow: 0 0 0 8px rgba(56,189,248,.22); }
 
 /* Route/page transition */
 .page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }

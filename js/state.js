@@ -37,6 +37,7 @@ function defaultState() {
     drafts: {},
     lastActive: null,
     review: {}, // spaced-review queue, see js/review.js
+    tourSeen: false, // first-run guided tour of the quest screen
     createdAt: Date.now(),
     courseCompletedAt: null,
   };
@@ -102,6 +103,11 @@ export function subscribe(fn) {
 
 export function setStudentName(name) {
   state.studentName = String(name || "").trim().slice(0, 40);
+  persist();
+}
+
+export function markTourSeen() {
+  state.tourSeen = true;
   persist();
 }
 
