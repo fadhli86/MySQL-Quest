@@ -25,6 +25,7 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **Sertifikat kelulusan** (setelah 14 level selesai) — dirender ke `<canvas>`, diunduh sebagai PNG, ditandatangani dosen pengampu, dilengkapi **QR code tanda tangan digital** yang mengarah ke halaman verifikasi (`verify.html`) untuk memeriksa konsistensi data sertifikat.
 - **SQL Playground** bebas dengan seluruh dataset kampus, untuk eksplorasi di luar quest.
 - **Materi kuliah lengkap 14 pertemuan** (folder [`materi/`](materi/README.md)) — modul ajar mendalam bergaya diktat/handout per pertemuan (konsep, sintaks MySQL 8 asli, studi kasus, best practice terkini, latihan mandiri), terhubung ke masing-masing level lewat halaman Panduan Bermain di dalam game. Tersedia juga sebagai satu dokumen Word siap cetak: [`Modul_Ajar_Database_MySQL_14_Pertemuan.docx`](materi/Modul_Ajar_Database_MySQL_14_Pertemuan.docx). Lihat perbedaannya dengan microlearning di dalam game pada [materi/README.md](materi/README.md).
+- **Bisa dibuka offline & di-install (PWA)**: setelah dibuka sekali dengan internet, aset (termasuk sql.js dan CodeMirror dari CDN) di-cache oleh service worker ([sw.js](sw.js)) sehingga game tetap jalan saat koneksi putus atau CDN kampus lambat/terblokir, dan bisa dipasang ke layar utama HP. Kunjungan *pertama* tetap membutuhkan akses ke CDN. File aplikasi memakai strategi network-first, jadi versi terbaru selalu dipakai bila online.
 - **Tahan gangguan jaringan/CDN**: kalau koneksi lambat atau CDN (sql.js/CodeMirror) terblokir jaringan kampus, aplikasi menampilkan pesan error yang jelas dengan tombol "Coba Lagi" alih-alih macet di layar kosong. Progress juga tetap aman kalau `localStorage` browser tidak bisa dipakai (mis. mode private) — mahasiswa diberi tahu lewat notifikasi, bukan kehilangan data secara diam-diam. Aset CDN dilengkapi Subresource Integrity (SRI) untuk keamanan tambahan.
 
 ## 🧱 Arsitektur & Batasan yang Disengaja
@@ -44,6 +45,7 @@ Struktur data (`js/state.js`, `js/levels.js`) sudah dirancang agar bagian ini bi
 
 ```
 index.html              Shell SPA (memuat CodeMirror & sql.js dari CDN)
+sw.js, manifest.webmanifest, icons/   PWA: cache offline + installable
 css/style.css            Seluruh styling, responsive breakpoints
 js/
   app.js                 Router hash-based + shell (topbar/sidebar/bottom-nav)
