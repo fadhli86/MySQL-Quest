@@ -675,7 +675,8 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--bg-panel); }
 .seg-btn { background: transparent; border: 0; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--text-dim); cursor: pointer; }
 .seg-btn.active { background: var(--btn-primary-bg); color: var(--btn-primary-fg); }
-.erd-toolbar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.erd-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.erd-focus { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text); font-size: 16px; max-width: 100%; }
 .erd-scroll { padding: 4px; }
 .modal-box.modal-full { max-width: 96vw; width: 96vw; max-height: 92vh; overflow: auto; }
 .erd-svg { display: block; max-width: none; font-family: var(--mono); font-size: 12.5px; }
@@ -708,6 +709,11 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 .parsons-piece { text-align: left; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px dashed var(--brand); background: var(--bg-elevated); color: var(--text); cursor: pointer; overflow-wrap: anywhere; }
 .parsons-piece:hover { border-style: solid; }
 .parsons-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ---- "Latihan Tambahan" group of optional stages ------------------------- */
+.extra-group { flex-basis: 100%; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--bg-panel); }
+.extra-group > summary { cursor: pointer; font-weight: 800; font-size: 12.5px; color: var(--brand); }
+.extra-group .stage-pill-row { margin-bottom: 4px; }
 
 /* Route/page transition */
 .page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }

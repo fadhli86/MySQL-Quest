@@ -35,6 +35,20 @@ export function inferRelations(tables) {
   });
 }
 
+// Only `name` and the tables directly related to it (one hop, either
+// direction) — a readable slice of a wide schema, e.g. on a phone.
+export function focusTables(rawTables, name) {
+  const tables = inferRelations(rawTables);
+  const keep = new Set([name]);
+  for (const t of tables) {
+    for (const f of t.fks) {
+      if (t.name === name) keep.add(f.refTable);
+      if (f.refTable === name) keep.add(t.name);
+    }
+  }
+  return rawTables.filter((t) => keep.has(t.name));
+}
+
 export function buildErdModel(rawTables) {
   const tables = inferRelations(rawTables);
   const byName = new Map(tables.map((t) => [t.name, t]));

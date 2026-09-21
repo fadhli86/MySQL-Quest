@@ -2,7 +2,7 @@
 // List | Diagram switch, and either the existing table list or the ER diagram.
 // The chosen view is remembered per browser as a convenience only.
 import { el, clear, openDialog } from "../ui.js";
-import { buildErdModel, renderErd } from "../erd.js";
+import { buildErdModel, renderErd, focusTables } from "../erd.js";
 
 const KEY = "mysqlquest_schema_view"; // "list" | "erd"
 
@@ -46,6 +46,7 @@ function openLargeDiagram(model) {
 export function mountSchemaPanel(panel, { title, renderList, getErdSchema }) {
   clear(panel);
   let mode = readMode();
+  let focus = ""; // "" = every table; otherwise a table name (its neighbours only)
   const body = el("div", {});
   const listBtn = el("button", { class: "seg-btn" }, "📋 Daftar");
   const erdBtn = el("button", { class: "seg-btn" }, "🔗 Diagram");
@@ -60,15 +61,24 @@ export function mountSchemaPanel(panel, { title, renderList, getErdSchema }) {
       body.appendChild(renderList());
       return;
     }
-    const tables = getErdSchema();
-    if (!tables.length) {
+    const allTables = getErdSchema();
+    if (!allTables.length) {
       body.appendChild(el("div", { class: "empty-hint" }, "Belum ada tabel untuk digambar."));
       return;
     }
+    if (focus && !allTables.some((t) => t.name === focus)) focus = "";
+    const tables = focus ? focusTables(allTables, focus) : allTables;
     const model = buildErdModel(tables);
+    const select = el("select", { class: "erd-focus", "aria-label": "Tabel yang difokuskan" }, [
+      el("option", { value: "" }, "Semua tabel"),
+      ...allTables.map((t) => el("option", { value: t.name }, `Fokus: ${t.name}`)),
+    ]);
+    select.value = focus;
+    select.addEventListener("change", () => { focus = select.value; draw(); });
     body.appendChild(
       el("div", { class: "erd-toolbar" }, [
-        el("button", { class: "btn btn-ghost btn-sm", onclick: () => openLargeDiagram(model) }, "⛶ Perbesar diagram"),
+        allTables.length > 2 ? select : null,
+        el("button", { class: "btn btn-ghost btn-sm", onclick: () => openLargeDiagram(buildErdModel(allTables)) }, "⛶ Perbesar diagram"),
       ])
     );
     body.appendChild(el("div", { class: "table-scroll erd-scroll" }, renderErd(model)));
@@ -77,7 +87,7 @@ export function mountSchemaPanel(panel, { title, renderList, getErdSchema }) {
       el("p", { class: "tag-note" }, [
         "Garis menghubungkan foreign key (FK) ke primary key (PK); “1” berarti satu, “N” berarti banyak. ",
         hasInferred ? "Garis putus-putus = relasi diperkirakan dari nama kolom (belum dideklarasikan sebagai FOREIGN KEY). " : "",
-        "Klik atau tekan Enter pada tabel untuk menyorot relasinya.",
+        "Klik atau tekan Enter pada tabel untuk menyorot relasinya. Geser ke samping bila diagram lebih lebar dari layar, atau pilih “Fokus” untuk melihat satu tabel beserta tetangganya.",
       ])
     );
   }

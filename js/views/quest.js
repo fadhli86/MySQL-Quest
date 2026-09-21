@@ -23,6 +23,7 @@ import { openCheatSheet } from "../cheatsheet.js";
 import { runTour } from "../tour.js";
 import { mountSchemaPanel } from "./schema-view.js";
 import { gradeParsons } from "../parsons.js";
+import { isExtraStage, stageIcon, nextStageId, initialStageId } from "../stage-kinds.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 
 const TABS = [
@@ -182,24 +183,41 @@ export async function renderQuest({ navigate, levelId }) {
     const notes = MYSQL_NOTES[level.id];
     if (notes && notes.length) panelQuest.appendChild(renderMysqlNotes(notes));
 
-    const pillRow = el("div", { class: "stage-pill-row" });
-    level.stages.forEach((stg, i) => {
-      pillRow.appendChild(
-        el(
-          "button",
-          {
-            class: `stage-pill ${stg.id === st.stageId ? "active" : ""} ${stageStatusClass(level, stg)}`,
-            "aria-current": stg.id === st.stageId ? "step" : null,
-            onclick: () => selectStage(stg.id),
-          },
-          // The green "done" style is colour-only; the check mark (and the
-          // screen-reader text) states it in words too.
-          stageStatusClass(level, stg) === "pass"
-            ? [`✓ ${i + 1}. ${stg.title}`, el("span", { class: "sr-only" }, " (selesai)")]
-            : `${i + 1}. ${stg.title}`
-        )
+    // Main-path stages are numbered; the optional extras (predict, Parsons,
+    // debug, optimise) sit in one collapsible "Latihan Tambahan" group.
+    const makePill = (stg, label) => {
+      const done = stageStatusClass(level, stg) === "pass";
+      return el(
+        "button",
+        {
+          class: `stage-pill ${stg.id === st.stageId ? "active" : ""} ${stageStatusClass(level, stg)}`,
+          "aria-current": stg.id === st.stageId ? "step" : null,
+          onclick: () => selectStage(stg.id),
+        },
+        // The green "done" style is colour-only; the check mark (and the
+        // screen-reader text) states it in words too.
+        done ? [`✓ ${label}`, el("span", { class: "sr-only" }, " (selesai)")] : label
       );
-    });
+    };
+    const extras = level.stages.filter(isExtraStage);
+    const pillRow = el("div", { class: "stage-pill-row" });
+    let number = 0;
+    let groupPlaced = false;
+    for (const stg of level.stages) {
+      if (!isExtraStage(stg)) {
+        number += 1;
+        pillRow.appendChild(makePill(stg, `${number}. ${stg.title}`));
+      } else if (!groupPlaced) {
+        groupPlaced = true;
+        const doneCount = extras.filter((x) => stageStatusClass(level, x) === "pass").length;
+        const group = el("details", { class: "extra-group", open: extras.some((x) => x.id === st.stageId) }, [
+          el("summary", {}, `➕ Latihan Tambahan (opsional) — ${doneCount}/${extras.length} selesai`),
+          el("p", { class: "tag-note", style: "margin:6px 0;" }, "Soal ekstra untuk mengasah pemahaman: prediksi output, susun potongan SQL, cari bug, dan optimasi. Memberi XP tetapi tidak memengaruhi mastery — boleh dilewati."),
+          el("div", { class: "stage-pill-row" }, extras.map((x) => makePill(x, `${stageIcon(x)} ${x.title}`.trim()))),
+        ]);
+        pillRow.appendChild(group);
+      }
+    }
     panelQuest.appendChild(pillRow);
 
     panelQuest.appendChild(renderStageBody(stage));
@@ -314,7 +332,7 @@ export async function renderQuest({ navigate, levelId }) {
         el("p", { style: "margin:0;" }, message),
       ]);
       if (passed) {
-        const isLast = level.stages[level.stages.length - 1].id === stage.id;
+        const isLast = !nextStageId(level, stage.id);
         const nextBtn = el(
           "button",
           { class: "btn btn-submit btn-sm", style: "margin-top:10px;" },
@@ -468,7 +486,7 @@ export async function renderQuest({ navigate, levelId }) {
       renderHeader();
       draw();
       revealResult();
-      const isLast = level.stages[level.stages.length - 1].id === stage.id;
+      const isLast = !nextStageId(level, stage.id);
       box.appendChild(
         el("button", { class: "btn btn-submit btn-sm", style: "margin-top:10px;", onclick: () => (isLast ? navigate("journey") : advanceStageIfPossible()) }, isLast ? "Selesai — Kembali ke Journey →" : "Lanjut ke Tahap Berikutnya →")
       );
@@ -718,9 +736,9 @@ export async function renderQuest({ navigate, levelId }) {
   }
 
   function advanceStageIfPossible() {
-    const idx = level.stages.findIndex((x) => x.id === st.stageId);
-    const next = level.stages[idx + 1];
-    if (next) selectStage(next.id);
+    // Steps over the optional extras (see js/stage-kinds.js).
+    const nextId = nextStageId(level, st.stageId);
+    if (nextId) selectStage(nextId);
   }
 
   function switchToResultOnMobile() {
@@ -1014,11 +1032,6 @@ export async function renderQuest({ navigate, levelId }) {
 }
 
 function pickInitialStage(level) {
-  const s = getState();
-  const ls = s.levels[level.id];
-  for (const stg of level.stages) {
-    const sp = ls.stages[stg.id];
-    if (!sp || sp.status !== "passed") return stg.id;
-  }
-  return level.stages[level.stages.length - 1].id;
+  const ls = getState().levels[level.id];
+  return initialStageId(level, (stageId) => !!ls.stages[stageId] && ls.stages[stageId].status === "passed");
 }

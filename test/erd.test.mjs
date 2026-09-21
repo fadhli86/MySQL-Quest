@@ -100,3 +100,17 @@ test("the campus schema shows the expected relations in Level 7", async () => {
   assert.ok(pairs.includes("enrollments->students"));
   assert.ok(pairs.includes("enrollments->courses"));
 });
+
+test("focusing a table keeps it and its direct neighbours only", async () => {
+  const { focusTables } = await import("../js/erd.js");
+  const level = LEVELS.find((l) => l.id === 7);
+  const sb = await new Sandbox(level.datasetSql).init();
+  const all = sb.getErdSchema().filter((t) => level.tables.includes(t.name));
+  const names = (n) => focusTables(all, n).map((t) => t.name).sort();
+  assert.deepEqual(names("students"), ["departments", "enrollments", "students"]);
+  assert.deepEqual(names("departments"), ["courses", "departments", "students"]);
+  assert.deepEqual(names("enrollments"), ["courses", "enrollments", "students"]);
+  const model = buildErdModel(focusTables(all, "students"));
+  assert.ok(model.nodes.length < all.length, "fewer tables than the full diagram");
+  assert.ok(model.edges.every((e) => ["students", "departments", "enrollments"].includes(e.child) && ["students", "departments", "enrollments"].includes(e.parent)));
+});
