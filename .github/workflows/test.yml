@@ -1,0 +1,21 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Model solutions for validate()-graded stages live in the gitignored
+      # RAHASIA-kunci-jawaban/ folder, so on CI those stages are skipped;
+      # referenceSql stages, content checks and grader tests run in full.
+      - run: npm test

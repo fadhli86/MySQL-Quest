@@ -15,6 +15,7 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **14 level penuh**: Database Rookie, Data Architect, Schema Builder, CRUD Ranger, Query Hunter, Data Analyst, Join Master, Query Strategist, Data Guardian, Normalization Master, Database Engineer, Transaction Guardian, Database Wizard, Database Architect (Final Boss).
 - **SQL Sandbox nyata di browser** — memakai [sql.js](https://sql.js.org) (SQLite dikompilasi ke WebAssembly), setiap level mendapat database terisolasi sendiri, bisa di-reset kapan saja tanpa risiko.
 - **Auto-grading** berbasis hasil eksekusi (bukan membandingkan teks query), plus pengecekan konsep SQL wajib/terlarang (mis. wajib pakai `JOIN`).
+- **Feedback yang menjelaskan**: saat query salah, panel Result membandingkan hasil Anda dengan target (kolom, baris yang kurang/berlebih, atau hanya urutan yang berbeda); kuis mengacak urutan opsi per mahasiswa dan menjelaskan *mengapa* opsi yang dipilih salah. Komponen skor yang tidak bisa dinilai pada suatu tahap (mis. Efficiency/Interpretation) tidak ditampilkan dan tidak ikut dihitung.
 - **Hint ladder bertingkat**, XP economy, badge, rank, dan portfolio evidence — sesuai blueprint gameplay.
 - **Boss Battle checkpoint** di Level 3, 7, 10, 13, dan Final Boss di Level 14.
 - **Responsive mobile-first**: navigasi tab (Quest–Editor–Schema–Result) + sticky action bar di HP, workspace 3 panel simultan di desktop — satu basis kode yang sama untuk kedua form factor.
@@ -74,6 +75,17 @@ npx serve .
 ```
 
 Lalu buka `http://localhost:8080`.
+
+## 🧪 Menjalankan Tes
+
+Situs tetap tanpa build step; `package.json` hanya untuk tes developer (memakai Node 18+ dan `sql.js` lokal):
+
+```bash
+npm install
+npm test
+```
+
+Tes memainkan seluruh 14 level dengan sandbox dan grader yang sama seperti di browser: solusi benar harus lolos (termasuk submit ulang), starter code atau `SELECT 1;` tidak boleh lolos, dan struktur konten level divalidasi. Stage yang dinilai lewat `validate()` butuh solusi model dari folder rahasia `RAHASIA-kunci-jawaban/` (tidak ada di repo publik), sehingga di GitHub Actions stage tersebut dilewati sedangkan sisanya tetap diuji penuh.
 
 ## 🚀 Deploy ke GitHub Pages
 

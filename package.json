@@ -1,0 +1,12 @@
+{
+  "name": "mysql-quest",
+  "private": true,
+  "type": "module",
+  "description": "MYSQL QUEST — static site; package.json exists only for the dev-time test suite.",
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "sql.js": "1.10.3"
+  }
+}
