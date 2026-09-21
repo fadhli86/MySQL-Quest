@@ -16,6 +16,7 @@ Buka `index.html` lewat static server (lihat [Menjalankan Secara Lokal](#-menjal
 - **SQL Sandbox nyata di browser** — memakai [sql.js](https://sql.js.org) (SQLite dikompilasi ke WebAssembly), setiap level mendapat database terisolasi sendiri, bisa di-reset kapan saja tanpa risiko.
 - **Auto-grading** berbasis hasil eksekusi (bukan membandingkan teks query), plus pengecekan konsep SQL wajib/terlarang (mis. wajib pakai `JOIN`).
 - **Feedback yang menjelaskan**: saat query salah, panel Result membandingkan hasil Anda dengan target (kolom, baris yang kurang/berlebih, atau hanya urutan yang berbeda); kuis mengacak urutan opsi per mahasiswa dan menjelaskan *mengapa* opsi yang dipilih salah. Komponen skor yang tidak bisa dinilai pada suatu tahap (mis. Efficiency/Interpretation) tidak ditampilkan dan tidak ikut dihitung.
+- **Tantangan Debug 🐞** (Level 5–8): query yang sudah ditulis tetapi salah — hasilnya terbalik, error karena kutip hilang, agregat di `WHERE`, `JOIN` tanpa `ON`, subquery yang mengembalikan banyak baris. Mahasiswa harus menemukan dan memperbaiki bug-nya. Bersifat opsional (tidak memengaruhi mastery), tetapi memberi XP.
 - **Hint ladder bertingkat**, XP economy, badge, rank, dan portfolio evidence — sesuai blueprint gameplay.
 - **Boss Battle checkpoint** di Level 3, 7, 10, 13, dan Final Boss di Level 14.
 - **Responsive mobile-first**: navigasi tab (Quest–Editor–Schema–Result) + sticky action bar di HP, workspace 3 panel simultan di desktop — satu basis kode yang sama untuk kedua form factor.

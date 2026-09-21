@@ -180,7 +180,7 @@ export async function renderQuest({ navigate, levelId }) {
   function renderStageBody(stage) {
     const wrap = el("div", {});
     const instrBox = el("div", { class: "instruction-box" }, [
-      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.title}`),
+      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.title}`),
       el("p", { style: "margin:0;" }, stage.instruction || stage.question || ""),
     ]);
     if (stage.requiredConstructs && stage.requiredConstructs.length) {
@@ -461,6 +461,22 @@ export async function renderQuest({ navigate, levelId }) {
     renderFeedback(gradeResult, execResult);
     renderSchemaPanel();
     switchToResultOnMobile();
+
+    // Ungraded SQL stages (e.g. Debug challenges) are optional practice: they
+    // award XP once when solved but never touch level mastery or completion.
+    if (!stage.graded) {
+      if (gradeResult.passed) {
+        const r = completeUngradedStage(level, stage, { sql });
+        if (r.xpAwarded) showXpToast(r.xpAwarded, stage.title);
+        renderHeader();
+        renderQuestPanel();
+        toast("✅ Bug berhasil diperbaiki!");
+        setTimeout(() => advanceStageIfPossible(), 600);
+      } else {
+        toast("Belum lolos — cek feedback pada tab Result.", "err");
+      }
+      return;
+    }
 
     const { xpEvents, mastery, justCompleted, courseJustCompleted } = submitStageResult(level, stage, sql, gradeResult);
     xpEvents.forEach((e) => showXpToast(e.amount, e.reason));

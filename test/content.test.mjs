@@ -61,3 +61,16 @@ test("every level has MySQL-vs-sandbox notes with both sides filled in", () => {
   }
   assert.deepEqual(Object.keys(MYSQL_NOTES).map(Number).sort((a, b) => a - b), LEVELS.map((l) => l.id), "no notes for unknown levels");
 });
+
+test("debug stages: ungraded, with a buggy starter that differs from the fix", () => {
+  const debugStages = LEVELS.flatMap((l) => l.stages.filter((s) => s.debug).map((s) => ({ l, s })));
+  assert.ok(debugStages.length >= 1, "there are debug stages");
+  for (const { l, s } of debugStages) {
+    const where = `L${l.id}/${s.id}`;
+    assert.equal(s.type, "sql", `${where}: is an sql stage`);
+    assert.equal(s.graded, false, `${where}: debug stages must not affect mastery`);
+    assert.ok(s.starterSql.trim() && s.referenceSql, `${where}: starter (buggy) and referenceSql (fixed)`);
+    assert.notEqual(s.starterSql.replace(/\s+/g, " ").trim(), s.referenceSql.replace(/\s+/g, " ").trim(), `${where}: starter must actually be buggy`);
+    assert.ok(s.hints.length >= 2, `${where}: hints`);
+  }
+});
