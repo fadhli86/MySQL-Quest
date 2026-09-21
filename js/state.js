@@ -2,6 +2,7 @@
 // unlock rules. No backend — progress lives on this device/browser only.
 
 import { LEVELS } from "./levels.js";
+import { signedExportJson } from "./integrity.js";
 import { reviewKey, parseReviewKey, trackMiss, trackStruggle, applyReviewAnswer, dueKeys, summarize } from "./review.js";
 
 const STORAGE_KEY = "mysqlquest_state_v1";
@@ -177,11 +178,19 @@ export function submitStageResult(level, stage, sql, gradeResult) {
     ls.stages[stage.id] = { status: "pending", bestScore: 0, attempts: 0, hintsUsed: 0, hintUsedEver: false };
   }
   const sp = ls.stages[stage.id];
+  const now = Date.now();
   sp.attempts += 1;
   sp.bestScore = Math.max(sp.bestScore, gradeResult.score);
   sp.status = gradeResult.passed ? "passed" : "attempted";
   sp.lastScore = gradeResult.score;
-  sp.lastAt = Date.now();
+  sp.lastAt = now;
+  // Evidence for the lecturer's re-grading (js/verify-progress.js): when the
+  // stage was first tried, and the SQL that first passed it and when.
+  if (!sp.firstAt) sp.firstAt = now;
+  if (gradeResult.passed && !sp.passedAt) {
+    sp.passedAt = now;
+    sp.passedSql = String(sql || "").slice(0, 4000);
+  }
 
   const xpEvents = [];
   if (gradeResult.passed && !sp.xpAwarded) {
@@ -408,6 +417,12 @@ export function exportProgressJson() {
   return JSON.stringify(state, null, 2);
 }
 
+// The Export button's file: same data plus a signature the lecturer's Rekap
+// Kelas can check (see js/integrity.js for what that does and doesn't prove).
+export function exportSignedProgressJson() {
+  return signedExportJson(state);
+}
+
 // Restores progress from a previously exported JSON file, so a student can
 // continue on a different browser/device without a backend. Replaces
 // progress on this device entirely — caller is responsible for confirming
@@ -422,6 +437,7 @@ export function importProgressJson(json) {
   if (!parsed || typeof parsed !== "object" || !parsed.levels || typeof parsed.levels !== "object") {
     throw new Error("Struktur data progress tidak dikenali. Pastikan file ini hasil Export Progress dari MYSQL QUEST.");
   }
+  delete parsed.integrity; // belongs to the file, not to the live state; re-created on export
   state = mergeWithDefault(parsed);
   persist();
 }

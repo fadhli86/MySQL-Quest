@@ -20,6 +20,7 @@ const GATE_KEY = "mq_dosen_gate_ok";
 const RECAP_KEY = "mysqlquest_dosen_recap_v1";
 
 import { el, clear, toast, confirmModal, fmtNum } from "../ui.js";
+import { integrityOfFile, integrityBadge, openIntegrityDetail, verifyCard, similarityCard } from "./rekap-integrity.js";
 import {
   scoreToGrade, gradeClass, fmtDate, downloadOrShareFile,
   buildLevelTable, buildCpmkTable, computeStats, computeCpmk,
@@ -36,7 +37,15 @@ function loadRecap() {
 }
 
 function saveRecap(list) {
-  localStorage.setItem(RECAP_KEY, JSON.stringify(list));
+  try {
+    localStorage.setItem(RECAP_KEY, JSON.stringify(list));
+    return true;
+  } catch (e) {
+    // Progress files now carry the SQL evidence, so a big class can fill the
+    // ~5 MB localStorage quota; say so instead of silently losing the import.
+    toast("Penyimpanan browser penuh — hapus sebagian rekap lalu impor ulang.", "err");
+    return false;
+  }
 }
 
 export async function renderRekapKelas({ navigate }) {
@@ -102,6 +111,7 @@ export async function renderRekapKelas({ navigate }) {
             xp: parsed.xp || 0,
             badgeCount: Array.isArray(parsed.badges) ? parsed.badges.length : 0,
             levels: parsed.levels,
+            integrity: await integrityOfFile(parsed),
             importedAt: Date.now(),
             sourceFileName: file.name,
           };
@@ -146,7 +156,7 @@ export async function renderRekapKelas({ navigate }) {
     const classAvg = Math.round(allStats.reduce((a, s) => a + s.avgMastery, 0) / allStats.length);
 
     // ---- Table rows ----
-    const headers = ["No", "Nama", "NIM", "Nilai Akhir", "Huruf", "Level Tuntas", "XP", "Badge", "Diimpor", "Aksi"];
+    const headers = ["No", "Nama", "NIM", "Nilai Akhir", "Huruf", "Level Tuntas", "XP", "Badge", "Integritas", "Diimpor", "Aksi"];
     const bodyRows = [];
     records.forEach((r, i) => {
       const stats = computeStats(r.levels);
@@ -154,6 +164,7 @@ export async function renderRekapKelas({ navigate }) {
       const g = scoreToGrade(stats.avgMastery);
 
       const detailBtn = el("button", { class: "btn btn-ghost btn-sm" }, "Detail");
+      const integBtn = el("button", { class: "btn btn-ghost btn-sm", style: "margin-left:6px;", onclick: () => openIntegrityDetail(r) }, "Integritas");
       const delBtn = el("button", { class: "btn btn-danger btn-sm", style: "margin-left:6px;" }, "Hapus");
 
       const tr = el("tr", {}, [
@@ -165,8 +176,9 @@ export async function renderRekapKelas({ navigate }) {
         el("td", { class: "num" }, `${stats.completedCount}/${stats.total}`),
         el("td", { class: "num" }, fmtNum(r.xp)),
         el("td", { class: "num" }, String(r.badgeCount)),
+        el("td", {}, [integrityBadge(r)]),
         el("td", { style: "font-size:11px;color:var(--text-faint);white-space:nowrap;" }, fmtDate(r.importedAt)),
-        el("td", { class: "no-print" }, [detailBtn, delBtn]),
+        el("td", { class: "no-print" }, [detailBtn, integBtn, delBtn]),
       ]);
 
       const detailRow = el("tr", { class: "no-print" }, [
@@ -259,6 +271,14 @@ export async function renderRekapKelas({ navigate }) {
         table,
       ])
     );
+
+    container.appendChild(
+      verifyCard(records, (updated) => {
+        if (saveRecap(updated)) toast("Verifikasi selesai — lihat kolom Integritas.");
+        showContent();
+      })
+    );
+    container.appendChild(similarityCard(records));
 
     container.appendChild(el("div", { class: "stat-row no-print", style: "margin-top:14px;" }, [printBtn, csvBtn]));
     container.appendChild(el("div", { style: "margin-top:10px;", class: "no-print" }, [clearBtn]));

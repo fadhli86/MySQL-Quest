@@ -1,4 +1,4 @@
-import { getState, getCpmkMastery, getOverallProgress, resetAllProgress, exportProgressJson, importProgressJson } from "../state.js";
+import { getState, getCpmkMastery, getOverallProgress, resetAllProgress, exportSignedProgressJson, importProgressJson } from "../state.js";
 import { LEVELS } from "../levels.js";
 import { el, confirmModal, toast } from "../ui.js";
 
@@ -32,7 +32,7 @@ export async function renderProgress({ navigate }) {
   const exportBtn = el("button", { class: "btn btn-ghost btn-sm" }, "⬇ Export / Kirim Progress");
   exportBtn.addEventListener("click", async () => {
     const filename = "mysql-quest-progress.json";
-    const file = new File([exportProgressJson()], filename, { type: "application/json" });
+    const file = new File([await exportSignedProgressJson()], filename, { type: "application/json" });
 
     // On phones/tablets, hand off to the native share sheet (WhatsApp, Email,
     // Google Drive, Save to Files, ...) so the student doesn't have to hunt
@@ -118,6 +118,7 @@ export async function renderProgress({ navigate }) {
         el("b", {}, "Import Progress (JSON)"),
         ", pilih file tadi.",
       ]),
+      el("p", { style: "margin:0 0 10px;font-size:12px;color:var(--text-faint);" }, "File export berisi SQL yang meloloskan tiap tahap dan ditandatangani otomatis, sehingga dosen dapat memeriksa keasliannya. Jangan mengubah isi file — perubahan apa pun akan terdeteksi."),
       el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;" }, [exportBtn, importBtn, importInput]),
     ]),
     el("div", { class: "card", style: "margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;" }, [resetBtn]),
