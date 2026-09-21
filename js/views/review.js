@@ -64,6 +64,7 @@ export async function renderReview({ navigate }) {
     const { key, level, stage } = session.items[session.index];
     const card = el("div", { class: "card" }, [
       el("div", { class: "tag-note" }, `Soal ${session.index + 1} dari ${session.items.length}${session.practice ? " • mode latihan" : ""} • Lv.${level.id} ${level.title}`),
+      stage.code ? el("pre", { class: "code-block", style: "margin:10px 0 0;" }, stage.code) : null,
       el("div", { class: "quiz-question", style: "margin:10px 0;font-weight:700;" }, stage.question),
     ]);
     const opts = el("div", { class: "quiz-opts" });

@@ -225,7 +225,7 @@ export async function renderQuest({ navigate, levelId }) {
   function renderStageBody(stage) {
     const wrap = el("div", {});
     const instrBox = el("div", { class: "instruction-box" }, [
-      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.title}`),
+      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.code ? "🔮 " : ""}${stage.title}`),
       el("p", { style: "margin:0;" }, stage.instruction || stage.question || ""),
     ]);
     if (stage.requiredConstructs && stage.requiredConstructs.length) {
@@ -255,12 +255,28 @@ export async function renderQuest({ navigate, levelId }) {
     const sp = getStageProgress(level.id, stage.id);
     const alreadyPassed = sp.status === "passed";
     const wrap = el("div", {});
-    wrap.appendChild(el("div", { class: "quiz-instruction" }, "👉 Pilih salah satu jawaban di bawah ini:"));
+    // "Predict the output" quizzes carry the query to read (stage.code). The
+    // real result is shown only after a correct answer, so a wrong guess can't
+    // just read the answer off the screen and retry into it.
+    if (stage.code) wrap.appendChild(el("pre", { class: "code-block predict-code", tabindex: "0", "aria-label": "Query yang harus diprediksi hasilnya" }, stage.code));
+    wrap.appendChild(el("div", { class: "quiz-instruction" }, stage.code ? "🔮 Bayangkan hasil query di atas tanpa menjalankannya, lalu pilih jawabannya:" : "👉 Pilih salah satu jawaban di bawah ini:"));
     const optsWrap = el("div", { class: "quiz-opts" });
     const feedbackWrap = el("div", { role: "status", "aria-live": "polite" });
+    const revealWrap = el("div", {});
     optsWrap.setAttribute("role", "group");
     optsWrap.setAttribute("aria-label", "Pilihan jawaban");
-    wrap.append(optsWrap, feedbackWrap);
+    wrap.append(optsWrap, feedbackWrap, revealWrap);
+
+    function revealActualResult() {
+      if (!stage.code) return;
+      clear(revealWrap);
+      const exec = st.sandbox.run(stage.code);
+      revealWrap.appendChild(el("div", { class: "section-title", style: "margin-top:14px;" }, "Hasil sebenarnya"));
+      if (!exec.ok) revealWrap.appendChild(el("div", { class: "error-box" }, humanizeSqlError(exec.error)));
+      else if (!exec.results.length) revealWrap.appendChild(el("div", { class: "empty-hint" }, "Query ini menghasilkan 0 baris (hasil kosong)."));
+      else revealWrap.appendChild(renderResultTable(exec.results));
+      setTimeout(() => revealWrap.scrollIntoView({ block: "nearest", behavior: "smooth" }), 50);
+    }
 
     // Display order is shuffled (authored order always has the answer first);
     // `i` below stays the ORIGINAL index so grading is unaffected.
@@ -319,12 +335,16 @@ export async function renderQuest({ navigate, levelId }) {
       if (result.passed) {
         const r = completeUngradedStage(level, stage);
         if (r.xpAwarded) showXpToast(r.xpAwarded, stage.title);
+        revealActualResult();
       }
       renderHeader();
     }
 
     renderOptions(alreadyPassed, null);
-    if (alreadyPassed) renderFeedback(true, stage.explainCorrect || "Jawaban tepat.");
+    if (alreadyPassed) {
+      renderFeedback(true, stage.explainCorrect || "Jawaban tepat.");
+      revealActualResult();
+    }
     return wrap;
   }
 

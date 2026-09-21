@@ -74,3 +74,23 @@ test("debug stages: ungraded, with a buggy starter that differs from the fix", (
     assert.ok(s.hints.length >= 2, `${where}: hints`);
   }
 });
+
+// "Predict the output" quizzes (quiz stages that carry a `code` query): the
+// authored claims about the result must be true on the level's own data —
+// otherwise the quiz would teach the wrong answer.
+for (const level of LEVELS) {
+  for (const stage of level.stages.filter((s) => s.type === "quiz" && s.code)) {
+    test(`L${level.id}/${stage.id} predict-the-output: claims match the real result`, async () => {
+      const where = `L${level.id}/${stage.id}`;
+      assert.ok(stage.expect && stage.answer, `${where}: needs expect and answer`);
+      assert.ok(stage.options[stage.correctIndex].includes(String(stage.answer)), `${where}: the correct option contains the answer "${stage.answer}"`);
+      const sb = await new Sandbox(level.datasetSql).init();
+      const exec = sb.run(stage.code);
+      assert.equal(exec.ok, true, `${where}: query runs (${exec.error})`);
+      const rows = exec.results.length ? exec.results[exec.results.length - 1].values : []; // sql.js returns no result set for 0 rows
+      if ("rowCount" in stage.expect) assert.equal(rows.length, stage.expect.rowCount, `${where}: row count`);
+      for (const [r, c, value] of stage.expect.cells || []) assert.equal(rows[r] && rows[r][c], value, `${where}: cell [${r}][${c}]`);
+      assert.ok(/^\s*select\s/i.test(stage.code), `${where}: predict queries are read-only SELECTs`);
+    });
+  }
+}
