@@ -12,6 +12,7 @@ import {
   recordHintUsed,
   submitStageResult,
   completeUngradedStage,
+  recordQuizMiss,
 } from "../state.js";
 import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.js";
 import { celebrateLevelComplete } from "../confetti.js";
@@ -260,6 +261,7 @@ export async function renderQuest({ navigate, levelId }) {
 
     function onAnswer(i) {
       const result = gradeQuizStage(stage, i);
+      if (!result.passed) recordQuizMiss(level, stage);
       renderOptions(true, result.passed ? null : i);
       renderFeedback(result.passed, result.message);
       if (result.passed) {

@@ -1,6 +1,18 @@
-import { getState, getRank, getOverallProgress, getCpmkMastery, isCourseComplete } from "../state.js";
+import { getState, getRank, getOverallProgress, getCpmkMastery, isCourseComplete, getReviewSummary } from "../state.js";
 import { LEVELS, getLevelById } from "../levels.js";
 import { el, fmtNum } from "../ui.js";
+
+// Spaced-review entry point; hidden until the student has anything to review.
+function reviewCard(navigate) {
+  const sum = getReviewSummary();
+  if (!sum.active && !sum.retired) return null;
+  return el("div", { class: "card", style: "margin-top:14px;" }, [
+    el("div", { class: "section-title" }, "🔁 Review Konsep"),
+    el("div", { style: "font-size:13.5px;color:var(--text-dim);margin-bottom:8px;" },
+      sum.due ? `${sum.due} soal konsep siap diulang agar tidak terlupa.` : sum.active ? "Belum ada soal yang jatuh tempo — Anda tetap bisa berlatih." : `✅ ${sum.retired} konsep sudah Anda kuasai.`),
+    el("button", { class: `btn ${sum.due ? "btn-primary" : "btn-ghost"} btn-sm`, style: "width:100%", onclick: () => navigate("review") }, sum.due ? "Mulai Review →" : "Buka Review →"),
+  ]);
+}
 
 export async function renderDashboard({ navigate }) {
   const s = getState();
@@ -73,6 +85,8 @@ export async function renderDashboard({ navigate }) {
         el("button", { class: "btn btn-ghost btn-sm", style: "margin-top:8px;width:100%", onclick: () => navigate("achievements") }, "Lihat Semua Achievement →"),
       ]),
     ]),
+
+    reviewCard(navigate),
 
     el("div", { class: "card", style: "margin-top:14px;" }, [
       el("div", { class: "section-title" }, "Quick Action"),

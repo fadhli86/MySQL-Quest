@@ -11,6 +11,7 @@ import { renderPlayground } from "./views/playground.js";
 import { renderHelp } from "./views/help.js";
 import { renderCertificate } from "./views/certificate.js";
 import { renderLaporan } from "./views/laporan.js";
+import { renderReview } from "./views/review.js";
 import { renderRekapKelas } from "./views/rekapKelas.js";
 
 const NAV_ITEMS = [
@@ -234,6 +235,9 @@ async function renderRoute() {
         break;
       case "laporan":
         mount(await renderLaporan({ navigate }));
+        break;
+      case "review":
+        mount(await renderReview({ navigate }));
         break;
       case "rekap-kelas":
         mount(await renderRekapKelas({ navigate }));

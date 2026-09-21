@@ -2,6 +2,7 @@
 // unlock rules. No backend — progress lives on this device/browser only.
 
 import { LEVELS } from "./levels.js";
+import { reviewKey, parseReviewKey, trackMiss, trackStruggle, applyReviewAnswer, dueKeys, summarize } from "./review.js";
 
 const STORAGE_KEY = "mysqlquest_state_v1";
 
@@ -35,6 +36,7 @@ function defaultState() {
     portfolio: [],
     drafts: {},
     lastActive: null,
+    review: {}, // spaced-review queue, see js/review.js
     createdAt: Date.now(),
     courseCompletedAt: null,
   };
@@ -236,6 +238,12 @@ export function submitStageResult(level, stage, sql, gradeResult) {
     courseJustCompleted = true;
   }
 
+  // Struggling with a graded stage (3+ attempts or 2+ hints) means the
+  // level's concepts are shaky: queue its concept quizzes for review.
+  if (stage.graded && (sp.attempts >= 3 || sp.hintsUsed >= 2)) {
+    trackStruggle(ensureReview(), level.stages.filter((s) => s.type === "quiz").map((s) => reviewKey(level.id, s.id)));
+  }
+
   persist();
   return { xpEvents, mastery: ls.mastery, levelStatus: ls.status, justCompleted, courseJustCompleted };
 }
@@ -292,6 +300,52 @@ export function completeUngradedStage(level, stage, opts = {}) {
   }
   persist();
   return { xpAwarded };
+}
+
+// ---------------------------------------------------------------- review queue
+function ensureReview() {
+  if (!state.review || typeof state.review !== "object") state.review = {};
+  return state.review;
+}
+
+// A concept quiz was answered wrong: put it in the review queue.
+export function recordQuizMiss(level, stage) {
+  trackMiss(ensureReview(), reviewKey(level.id, stage.id));
+  persist();
+}
+
+export function getReviewSummary(now = Date.now()) {
+  return summarize(ensureReview(), now);
+}
+
+// Review items as { key, level, stage }, skipping keys that no longer match
+// a quiz in the current content (levels can be edited after progress exists).
+export function getReviewItems({ all = false, now = Date.now() } = {}) {
+  const items = [];
+  for (const key of dueKeys(ensureReview(), now, { all })) {
+    const { levelId, stageId } = parseReviewKey(key);
+    const level = LEVELS.find((l) => l.id === levelId);
+    const stage = level && level.stages.find((s) => s.id === stageId && s.type === "quiz");
+    if (stage) items.push({ key, level, stage });
+  }
+  return items;
+}
+
+export const REVIEW_XP = 5;
+
+// Records one review answer. `practice` sessions (reviewing before anything is
+// due) neither move the schedule nor award XP, so they can't be farmed.
+export function answerReview(key, correct, { practice = false } = {}) {
+  if (practice) return { advanced: false, retired: false, xp: 0 };
+  const result = applyReviewAnswer(ensureReview(), key, correct);
+  let xp = 0;
+  if (result.advanced) {
+    xp = REVIEW_XP;
+    addXp(xp, "Review konsep"); // persists
+  } else {
+    persist();
+  }
+  return { ...result, xp };
 }
 
 function unlockNext(level) {
