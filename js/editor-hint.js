@@ -28,3 +28,13 @@ export function enableSchemaAutocomplete(cm, getSchema) {
     if (word.length >= 2 || typed === ".") editor.showHint(hintOptions);
   });
 }
+
+// Keyboard/screen-reader access for a CodeMirror editor:
+// - the hidden textarea gets an accessible name;
+// - Tab / Shift+Tab leave the editor instead of inserting indentation
+//   (CodeMirror's default makes the editor a keyboard trap). The suggestion
+//   list still uses Tab to pick a completion while it is open.
+export function makeEditorAccessible(cm, label) {
+  cm.getInputField().setAttribute("aria-label", label);
+  cm.setOption("extraKeys", { ...(cm.getOption("extraKeys") || {}), Tab: false, "Shift-Tab": false });
+}

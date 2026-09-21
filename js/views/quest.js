@@ -18,7 +18,7 @@ import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.j
 import { celebrateLevelComplete } from "../confetti.js";
 import { shuffledOptionOrder } from "../quiz-utils.js";
 import { MYSQL_NOTES } from "../mysql-notes.js";
-import { enableSchemaAutocomplete } from "../editor-hint.js";
+import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 
 const TABS = [
   { id: "quest", label: "Quest", icon: "📜" },
@@ -84,12 +84,13 @@ export async function renderQuest({ navigate, levelId }) {
   // -------------------------------------------------------------- skeleton
   const header = el("div", { class: "quest-header" });
   const introScreen = el("div", { class: "intro-screen force-hide" });
-  const tabsBar = el("div", { class: "quest-tabs force-hide" });
+  const tabsBar = el("div", { class: "quest-tabs force-hide", role: "tablist", "aria-label": "Bagian quest" });
   const panels = el("div", { class: "quest-panels force-hide" });
-  const panelQuest = el("div", { class: "panel panel-quest active" });
-  const panelEditor = el("div", { class: "panel panel-editor" });
-  const panelSchema = el("div", { class: "panel panel-schema" });
-  const panelResult = el("div", { class: "panel panel-result" });
+  const panelQuest = el("div", { class: "panel panel-quest active", id: "panel-quest", role: "tabpanel", "aria-labelledby": "tab-quest" });
+  const panelEditor = el("div", { class: "panel panel-editor", id: "panel-editor", role: "tabpanel", "aria-labelledby": "tab-editor" });
+  const panelSchema = el("div", { class: "panel panel-schema", id: "panel-schema", role: "tabpanel", "aria-labelledby": "tab-schema" });
+  // aria-live: grading feedback appears here after Submit and should be announced
+  const panelResult = el("div", { class: "panel panel-result", id: "panel-result", role: "tabpanel", "aria-labelledby": "tab-result", "aria-live": "polite" });
   panels.append(panelQuest, panelEditor, panelSchema, panelResult);
   const actionBar = el("div", { class: "mobile-action-bar force-hide" });
 
@@ -102,7 +103,7 @@ export async function renderQuest({ navigate, levelId }) {
     header.append(
       el("button", { class: "back-btn", onclick: () => navigate("journey") }, "← Journey"),
       el("div", { class: "qtitle" }, `Lv.${level.id} ${level.title} — ${level.questTitle}`),
-      el("div", { class: "qmastery" }, `${ls.mastery}%`)
+      el("div", { class: "qmastery", title: "Mastery level ini", "aria-label": `Mastery level ini ${ls.mastery} persen` }, `${ls.mastery}%`)
     );
   }
 
@@ -111,7 +112,11 @@ export async function renderQuest({ navigate, levelId }) {
     clear(tabsBar);
     for (const t of TABS) {
       tabsBar.appendChild(
-        el("button", { class: `tab-btn${st.tab === t.id ? " active" : ""}`, onclick: () => switchTab(t.id) }, `${t.icon} ${t.label}`)
+        el(
+          "button",
+          { class: `tab-btn${st.tab === t.id ? " active" : ""}`, id: `tab-${t.id}`, role: "tab", "aria-selected": st.tab === t.id ? "true" : "false", "aria-controls": `panel-${t.id}`, onclick: () => switchTab(t.id) },
+          `${t.icon} ${t.label}`
+        )
       );
     }
   }
@@ -152,7 +157,19 @@ export async function renderQuest({ navigate, levelId }) {
     const pillRow = el("div", { class: "stage-pill-row" });
     level.stages.forEach((stg, i) => {
       pillRow.appendChild(
-        el("button", { class: `stage-pill ${stg.id === st.stageId ? "active" : ""} ${stageStatusClass(level, stg)}`, onclick: () => selectStage(stg.id) }, `${i + 1}. ${stg.title}`)
+        el(
+          "button",
+          {
+            class: `stage-pill ${stg.id === st.stageId ? "active" : ""} ${stageStatusClass(level, stg)}`,
+            "aria-current": stg.id === st.stageId ? "step" : null,
+            onclick: () => selectStage(stg.id),
+          },
+          // The green "done" style is colour-only; the check mark (and the
+          // screen-reader text) states it in words too.
+          stageStatusClass(level, stg) === "pass"
+            ? [`✓ ${i + 1}. ${stg.title}`, el("span", { class: "sr-only" }, " (selesai)")]
+            : `${i + 1}. ${stg.title}`
+        )
       );
     });
     panelQuest.appendChild(pillRow);
@@ -213,7 +230,9 @@ export async function renderQuest({ navigate, levelId }) {
     const wrap = el("div", {});
     wrap.appendChild(el("div", { class: "quiz-instruction" }, "👉 Pilih salah satu jawaban di bawah ini:"));
     const optsWrap = el("div", { class: "quiz-opts" });
-    const feedbackWrap = el("div", {});
+    const feedbackWrap = el("div", { role: "status", "aria-live": "polite" });
+    optsWrap.setAttribute("role", "group");
+    optsWrap.setAttribute("aria-label", "Pilihan jawaban");
     wrap.append(optsWrap, feedbackWrap);
 
     // Display order is shuffled (authored order always has the answer first);
@@ -229,8 +248,14 @@ export async function renderQuest({ navigate, levelId }) {
         // correctly (or the stage was already passed) — after a wrong pick
         // the student must reason from the explanation, not read the answer
         // off the highlighted option and "retry" into it.
-        if (locked && i === stage.correctIndex && (wrongIndex === null || wrongIndex === undefined)) btn.classList.add("correct");
-        if (locked && i === wrongIndex) btn.classList.add("wrong");
+        if (locked && i === stage.correctIndex && (wrongIndex === null || wrongIndex === undefined)) {
+          btn.classList.add("correct");
+          btn.appendChild(el("span", { class: "sr-only" }, " (jawaban benar)"));
+        }
+        if (locked && i === wrongIndex) {
+          btn.classList.add("wrong");
+          btn.appendChild(el("span", { class: "sr-only" }, " (jawaban Anda, salah)"));
+        }
         btn.addEventListener("click", () => onAnswer(i));
         optsWrap.appendChild(btn);
       });
@@ -374,6 +399,7 @@ export async function renderQuest({ navigate, levelId }) {
       extraKeys: { "Ctrl-Space": "autocomplete" },
     });
     enableSchemaAutocomplete(st.cm, () => st.sandbox.getSchemaMap());
+    makeEditorAccessible(st.cm, "Editor SQL — tulis query Anda di sini. Tekan Tab untuk keluar dari editor.");
     st.cm.on("change", () => {
       clearTimeout(st.saveTimer);
       st.saveTimer = setTimeout(() => saveDraft(draftKeyOf(stage), st.cm.getValue()), 500);
@@ -617,7 +643,7 @@ export async function renderQuest({ navigate, levelId }) {
       el("div", { class: "result-meta" }, [el("span", {}, ["Baris: ", el("b", {}, String(last.values.length))]), el("span", {}, ["Kolom: ", el("b", {}, String(last.columns.length))])]),
     ]);
     const table = el("table", { class: "result-table" });
-    const thead = el("thead", {}, [el("tr", {}, last.columns.map((c) => el("th", {}, c)))]);
+    const thead = el("thead", {}, [el("tr", {}, last.columns.map((c) => el("th", { scope: "col" }, c)))]);
     const tbody = el("tbody", {}, last.values.slice(0, 200).map((row) => el("tr", {}, row.map((v) => el("td", {}, v === null ? "NULL" : String(v))))));
     table.append(thead, tbody);
     wrap.appendChild(el("div", { class: "table-scroll" }, table));
@@ -727,6 +753,7 @@ export async function renderQuest({ navigate, levelId }) {
       lineNumbers: true,
       matchBrackets: true,
     });
+    makeEditorAccessible(introCm, "Editor latihan awal. Tekan Tab untuk keluar dari editor.");
     setTimeout(() => introCm.refresh(), 30);
 
     let hasRunPractice = false;

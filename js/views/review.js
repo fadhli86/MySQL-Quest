@@ -67,7 +67,7 @@ export async function renderReview({ navigate }) {
       el("div", { class: "quiz-question", style: "margin:10px 0;font-weight:700;" }, stage.question),
     ]);
     const opts = el("div", { class: "quiz-opts" });
-    const feedback = el("div", {});
+    const feedback = el("div", { role: "status", "aria-live": "polite" });
     const seed = `${key}:${getState().studentName}:${Math.floor(Date.now() / DAY_MS)}`;
     const order = shuffledOptionOrder(stage.options.length, seed);
 
@@ -76,8 +76,13 @@ export async function renderReview({ navigate }) {
       order.forEach((i) => {
         const btn = el("button", { class: "quiz-opt", disabled: chosen !== undefined }, stage.options[i]);
         if (chosen !== undefined) {
-          if (i === stage.correctIndex) btn.classList.add("correct");
-          else if (i === chosen) btn.classList.add("wrong");
+          if (i === stage.correctIndex) {
+            btn.classList.add("correct");
+            btn.appendChild(el("span", { class: "sr-only" }, " (jawaban benar)"));
+          } else if (i === chosen) {
+            btn.classList.add("wrong");
+            btn.appendChild(el("span", { class: "sr-only" }, " (jawaban Anda, salah)"));
+          }
         }
         btn.addEventListener("click", () => onAnswer(i));
         opts.appendChild(btn);

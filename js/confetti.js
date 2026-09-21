@@ -1,11 +1,13 @@
 // Lightweight celebration effect for level completion — plain DOM/CSS,
 // no canvas or external library, so it stays inside the no-build,
 // CDN-only footprint of the rest of the app.
-import { el } from "./ui.js";
+import { el, openDialog } from "./ui.js";
 
 const COLORS = ["#38bdf8", "#a78bfa", "#fbbf24", "#34d399", "#fb7185"];
 
 function spawnConfetti(container, count = 46) {
+  // Falling confetti is decorative motion: skip it for people who asked for less.
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   for (let i = 0; i < count; i++) {
     const size = 6 + Math.random() * 6;
     const piece = el("div", {
@@ -42,17 +44,20 @@ export function celebrateLevelComplete(opts) {
     ]),
     el(
       "button",
-      { class: "btn btn-primary btn-block", onclick: () => { overlay.remove(); opts.onContinue && opts.onContinue(); } },
+      { class: "btn btn-primary btn-block" },
       opts.courseComplete ? "Lihat Sertifikat Kelulusan 🎓" : opts.hasNext ? "Lanjut ke Level Berikutnya →" : "Lihat Journey 🎉"
     ),
   ]);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
   spawnConfetti(box);
+  const proceed = () => {
+    close();
+    opts.onContinue && opts.onContinue();
+  };
+  const close = openDialog(overlay, box, { onEscape: proceed });
+  box.querySelector("button").onclick = proceed;
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) {
-      overlay.remove();
-      opts.onContinue && opts.onContinue();
-    }
+    if (e.target === overlay) proceed();
   });
 }

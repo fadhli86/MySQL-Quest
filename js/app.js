@@ -14,6 +14,21 @@ import { renderLaporan } from "./views/laporan.js";
 import { renderReview } from "./views/review.js";
 import { renderRekapKelas } from "./views/rekapKelas.js";
 
+const ROUTE_TITLES = {
+  dashboard: "Home",
+  journey: "Journey",
+  quest: "Quest",
+  playground: "Playground",
+  progress: "Learning Progress",
+  achievements: "Achievement",
+  portfolio: "Portfolio",
+  certificate: "Sertifikat",
+  laporan: "Laporan Nilai",
+  review: "Review Konsep",
+  help: "Panduan Bermain",
+  "rekap-kelas": "Rekap Kelas",
+};
+
 const NAV_ITEMS = [
   { route: "dashboard", icon: "🏠", label: "Home" },
   { route: "journey", icon: "🗺️", label: "Journey" },
@@ -38,17 +53,21 @@ window.mqNavigate = navigate;
 function buildShell() {
   clear(app);
 
-  const topbar = el("div", { class: "topbar", id: "topbar" });
+  const topbar = el("div", { class: "topbar", id: "topbar", role: "banner" });
   const shell = el("div", { class: "shell" });
-  const sidebar = el("div", { class: "sidebar", id: "sidebar" });
-  const content = el("div", { class: "content", id: "content" });
+  const sidebar = el("div", { class: "sidebar", id: "sidebar", role: "navigation", "aria-label": "Navigasi utama" });
+  // tabindex=-1: focus is moved here after each route change so keyboard and
+  // screen-reader users start at the new page instead of the old nav position.
+  const content = el("div", { class: "content", id: "content", role: "main", tabindex: "-1" });
   shell.appendChild(sidebar);
   shell.appendChild(content);
-  const bottomNav = el("div", { class: "bottom-nav", id: "bottom-nav" });
+  const bottomNav = el("div", { class: "bottom-nav", id: "bottom-nav", role: "navigation", "aria-label": "Navigasi bawah" });
 
-  const helpFab = el("button", { class: "help-fab", title: "Panduan Bermain", onclick: () => navigate("help") }, "❓");
-  const themeFab = el("button", { class: "theme-fab", title: "Ganti Tema Terang/Gelap", onclick: onToggleTheme }, "🌙");
+  const helpFab = el("button", { class: "help-fab", title: "Panduan Bermain", "aria-label": "Panduan Bermain", onclick: () => navigate("help") }, "❓");
+  const themeFab = el("button", { class: "theme-fab", title: "Ganti Tema Terang/Gelap", "aria-label": "Ganti tema terang/gelap", onclick: onToggleTheme }, "🌙");
+  const skip = el("button", { class: "skip-link", onclick: () => content.focus() }, "Lompat ke konten utama");
 
+  app.appendChild(skip);
   app.appendChild(topbar);
   app.appendChild(shell);
   app.appendChild(bottomNav);
@@ -97,9 +116,9 @@ function renderTopbar(activeRoute) {
   refs.topbar.appendChild(el("div", { class: "rank-pill" }, rank.name));
   refs.topbar.appendChild(el("div", { class: `xp-pill${xpWentUp ? " bump" : ""}` }, [el("span", { class: "dot" }, "★"), `${s.xp} XP`]));
   refs.topbar.appendChild(
-    el("button", { class: "btn btn-icon btn-ghost btn-sm", id: "topbar-theme-btn", title: "Ganti Tema Terang/Gelap", onclick: onToggleTheme }, themeIcon(currentEffectiveTheme()))
+    el("button", { class: "btn btn-icon btn-ghost btn-sm", id: "topbar-theme-btn", title: "Ganti Tema Terang/Gelap", "aria-label": "Ganti tema terang/gelap", onclick: onToggleTheme }, themeIcon(currentEffectiveTheme()))
   );
-  refs.topbar.appendChild(el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Panduan Bermain", onclick: () => navigate("help") }, "❓"));
+  refs.topbar.appendChild(el("button", { class: "btn btn-icon btn-ghost btn-sm", title: "Panduan Bermain", "aria-label": "Panduan Bermain", onclick: () => navigate("help") }, "❓"));
 }
 
 function renderSidebar(activeRoute) {
@@ -107,28 +126,28 @@ function renderSidebar(activeRoute) {
   for (const item of NAV_ITEMS) {
     const isActive = (item.extraRoutes || [item.route]).includes(activeRoute);
     refs.sidebar.appendChild(
-      el("button", { class: `nav-item${isActive ? " active" : ""}`, onclick: () => navigate(item.route) }, [
-        el("span", { class: "ic" }, item.icon),
+      el("button", { class: `nav-item${isActive ? " active" : ""}`, "aria-current": isActive ? "page" : null, onclick: () => navigate(item.route) }, [
+        el("span", { class: "ic", "aria-hidden": "true" }, item.icon),
         item.label === "More" ? "Achievement" : item.label,
       ])
     );
   }
   refs.sidebar.appendChild(el("div", { style: "flex:1" }));
   refs.sidebar.appendChild(
-    el("button", { class: "nav-item", onclick: () => navigate("portfolio") }, [el("span", { class: "ic" }, "📁"), "Portfolio"])
+    el("button", { class: "nav-item", onclick: () => navigate("portfolio") }, [el("span", { class: "ic", "aria-hidden": "true" }, "📁"), "Portfolio"])
   );
   refs.sidebar.appendChild(
-    el("button", { class: `nav-item${activeRoute === "certificate" ? " active" : ""}`, onclick: () => navigate("certificate") }, [el("span", { class: "ic" }, "🎓"), "Sertifikat"])
+    el("button", { class: `nav-item${activeRoute === "certificate" ? " active" : ""}`, "aria-current": activeRoute === "certificate" ? "page" : null, onclick: () => navigate("certificate") }, [el("span", { class: "ic", "aria-hidden": "true" }, "🎓"), "Sertifikat"])
   );
   refs.sidebar.appendChild(
-    el("button", { class: `nav-item${activeRoute === "laporan" ? " active" : ""}`, onclick: () => navigate("laporan") }, [el("span", { class: "ic" }, "📊"), "Laporan Nilai"])
+    el("button", { class: `nav-item${activeRoute === "laporan" ? " active" : ""}`, "aria-current": activeRoute === "laporan" ? "page" : null, onclick: () => navigate("laporan") }, [el("span", { class: "ic", "aria-hidden": "true" }, "📊"), "Laporan Nilai"])
   );
   refs.sidebar.appendChild(
-    el("button", { class: `nav-item${activeRoute === "help" ? " active" : ""}`, onclick: () => navigate("help") }, [el("span", { class: "ic" }, "❓"), "Panduan"])
+    el("button", { class: `nav-item${activeRoute === "help" ? " active" : ""}`, "aria-current": activeRoute === "help" ? "page" : null, onclick: () => navigate("help") }, [el("span", { class: "ic", "aria-hidden": "true" }, "❓"), "Panduan"])
   );
   refs.sidebar.appendChild(
     el("button", { class: "nav-item", id: "sidebar-theme-btn", onclick: onToggleTheme }, [
-      el("span", { class: "ic" }, themeIcon(currentEffectiveTheme())),
+      el("span", { class: "ic", "aria-hidden": "true" }, themeIcon(currentEffectiveTheme())),
       "Tema",
     ])
   );
@@ -145,8 +164,8 @@ function renderBottomNav(activeRoute) {
   for (const item of NAV_ITEMS) {
     const isActive = (item.extraRoutes || [item.route]).includes(activeRoute);
     refs.bottomNav.appendChild(
-      el("button", { class: `nav-item${isActive ? " active" : ""}`, onclick: () => navigate(item.route) }, [
-        el("span", { class: "ic" }, item.icon),
+      el("button", { class: `nav-item${isActive ? " active" : ""}`, "aria-current": isActive ? "page" : null, onclick: () => navigate(item.route) }, [
+        el("span", { class: "ic", "aria-hidden": "true" }, item.icon),
         el("span", {}, item.label),
       ])
     );
@@ -184,6 +203,8 @@ function renderErrorState(err, onRetry) {
     ]),
   ]);
 }
+
+let hasRenderedRoute = false;
 
 async function renderRoute() {
   const { route, param } = parseHash();
@@ -248,6 +269,12 @@ async function renderRoute() {
         break;
     }
     if (route !== "quest" && route !== "playground") refs.content.style.padding = "";
+    // Announce the new page: a distinct title, and focus moved to the content
+    // area so keyboard/screen-reader users start at the top of the new page.
+    document.title = `${ROUTE_TITLES[route] || "Home"} — MYSQL QUEST`;
+    // (Skipped on first load so the skip link stays the first Tab stop.)
+    if (hasRenderedRoute) refs.content.focus({ preventScroll: true });
+    hasRenderedRoute = true;
   } catch (err) {
     refs.content.style.padding = "";
     mount(renderErrorState(err, () => renderRoute()));

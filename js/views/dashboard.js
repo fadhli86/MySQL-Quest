@@ -45,7 +45,7 @@ export async function renderDashboard({ navigate }) {
         el("span", { class: "status-pill" }, `🎯 Rank ${rank.name}`),
         el("span", { class: "status-pill" }, `⭐ ${fmtNum(s.xp)} XP`),
       ]),
-      el("div", { class: "progress-track" }, [el("div", { class: "progress-fill", style: `width:${overall}%` })]),
+      el("div", { class: "progress-track", role: "progressbar", "aria-label": "Progress course", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(overall) }, [el("div", { class: "progress-fill", style: `width:${overall}%` })]),
       el("div", { style: "margin-top:8px;font-size:12.5px;color:var(--text-dim);" }, `Course progress: ${overall}% (${LEVELS.filter((l) => ["completed", "mastered"].includes(s.levels[l.id].status)).length}/${LEVELS.length} level selesai)`),
       continueTarget
         ? el("div", { class: "continue-card" }, [

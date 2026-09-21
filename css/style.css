@@ -10,16 +10,20 @@
   --border-soft: #e5edf9;
   --text: #16314d;
   --text-dim: #4c647f;
-  --text-faint: #6f89a8;
-  --brand: #2563eb;
+  --text-faint: #536c89; /* a11y: >=4.5:1 on all panel backgrounds */
+  --brand: #1c5cea;
   --brand-dim: #1f4dc7;
   --accent: #7c3aed;
-  --xp: #e59b00;
-  --good: #1d9d61;
+  --xp: #a84d08;
+  --good: #147739;
   --good-dim: #0d7a58;
-  --warn: #d97706;
-  --bad: #dc2626;
-  --locked: #94a3b8;
+  --warn: #a84d08;
+  --bad: #c81e1e;
+  --locked: #5a697e;
+  --btn-primary-bg: linear-gradient(135deg, #1d4ed8, #2563eb);
+  --btn-primary-fg: #ffffff;
+  --btn-submit-bg: linear-gradient(135deg, #15803d, #047857);
+  --btn-submit-fg: #ffffff;
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 18px 36px rgba(30, 64, 175, 0.12);
@@ -55,7 +59,7 @@
     --border-soft: #1e2a47;
     --text: #e7ecf7;
     --text-dim: #9aa7c7;
-    --text-faint: #6b7593;
+    --text-faint: #8b93ab; /* a11y: >=4.5:1 */
     --brand: #38bdf8;
     --brand-dim: #0ea5e9;
     --accent: #a78bfa;
@@ -64,7 +68,11 @@
     --good-dim: #10b981;
     --warn: #fbbf24;
     --bad: #fb7185;
-    --locked: #475569;
+    --locked: #8494ac;
+    --btn-primary-bg: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    --btn-primary-fg: #04202e;
+    --btn-submit-bg: linear-gradient(135deg, #34d399, #10b981);
+    --btn-submit-fg: #052e1b;
     --shadow: 0 18px 36px rgba(0,0,0,.45);
     --header-glass: rgba(11,17,32,.9);
     --glass-chip: rgba(255,255,255,.06);
@@ -85,7 +93,7 @@
   --border-soft: #1e2a47;
   --text: #e7ecf7;
   --text-dim: #9aa7c7;
-  --text-faint: #6b7593;
+  --text-faint: #8b93ab; /* a11y: >=4.5:1 */
   --brand: #38bdf8;
   --brand-dim: #0ea5e9;
   --accent: #a78bfa;
@@ -94,7 +102,11 @@
   --good-dim: #10b981;
   --warn: #fbbf24;
   --bad: #fb7185;
-  --locked: #475569;
+  --locked: #8494ac;
+  --btn-primary-bg: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  --btn-primary-fg: #04202e;
+  --btn-submit-bg: linear-gradient(135deg, #34d399, #10b981);
+  --btn-submit-fg: #052e1b;
   --shadow: 0 18px 36px rgba(0,0,0,.45);
   --header-glass: rgba(11,17,32,.9);
   --glass-chip: rgba(255,255,255,.06);
@@ -139,9 +151,9 @@ button { font-family: inherit; }
 .btn:hover { border-color: var(--brand-dim); box-shadow: 0 12px 22px rgba(37,99,235,.12); }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-primary { background: linear-gradient(135deg, var(--brand), #3b82f6 35%, #60a5fa 100%); border-color: transparent; color: #ffffff; box-shadow: 0 14px 28px rgba(37,99,235,.18); }
+.btn-primary { background: var(--btn-primary-bg); border-color: transparent; color: var(--btn-primary-fg); box-shadow: 0 14px 28px rgba(37,99,235,.18); }
 .btn-primary:hover { filter: brightness(1.05); }
-.btn-submit { background: linear-gradient(135deg, #34d399, #16a34a); border-color: transparent; color: #ffffff; }
+.btn-submit { background: var(--btn-submit-bg); border-color: transparent; color: var(--btn-submit-fg); }
 .btn-submit:hover { filter: brightness(1.08); }
 .btn-ghost { background: transparent; }
 .btn-danger { background: transparent; border-color: var(--bad); color: var(--bad); }
@@ -313,9 +325,9 @@ button { font-family: inherit; }
   flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 15px; border: 2px solid var(--border); background: var(--bg-panel-2); color: var(--text-faint); z-index: 1;
 }
-.journey-node.done .node-dot { background: linear-gradient(180deg, #34d399, #059669); border-color: transparent; color: #04241a; }
+.journey-node.done .node-dot { background: linear-gradient(180deg, #34d399, #10b981); border-color: transparent; color: #04241a; }
 .journey-node.mastered .node-dot { background: linear-gradient(180deg, #fbbf24, #d97706); border-color: transparent; color: #2a1400; }
-.journey-node.now .node-dot { background: linear-gradient(180deg, var(--brand), var(--brand-dim)); border-color: transparent; color: #04202e; box-shadow: 0 0 0 4px rgba(56,189,248,.18); }
+.journey-node.now .node-dot { background: var(--btn-primary-bg); border-color: transparent; color: var(--btn-primary-fg); box-shadow: 0 0 0 4px rgba(56,189,248,.18); }
 .journey-node.remedial .node-dot { background: var(--bg-panel-2); border-color: var(--bad); color: var(--bad); }
 .journey-node.locked .node-dot { color: var(--locked); }
 .journey-node .node-body { flex: 1; min-width: 0; padding-top: 2px; }
@@ -617,6 +629,24 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
+
+/* ---- Accessibility ------------------------------------------------------ */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Visible keyboard focus everywhere (mouse clicks don't show it). */
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.btn-primary:focus-visible, .btn-submit:focus-visible { outline-color: var(--text); }
+.content:focus { outline: none; } /* focus is moved here programmatically after navigation */
+
+.skip-link { position: fixed; top: -60px; left: 12px; z-index: 1000; padding: 10px 16px; border-radius: 10px; background: var(--bg-panel); color: var(--text); border: 2px solid var(--brand); font-weight: 700; }
+.skip-link:focus { top: 12px; }
+
+/* Correct/wrong quiz options: state is not colour-only. */
+.quiz-opt.correct::after { content: " ✓"; font-weight: 800; }
+.quiz-opt.wrong::after { content: " ✗"; font-weight: 800; }
+
+/* iOS zooms into inputs below 16px; the page itself can now be zoomed freely. */
+@media (max-width: 1023px) { input, textarea, select { font-size: 16px; } }
 
 /* Route/page transition */
 .page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }
