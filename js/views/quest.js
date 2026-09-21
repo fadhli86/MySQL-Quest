@@ -22,6 +22,7 @@ import { MYSQL_NOTES } from "../mysql-notes.js";
 import { openCheatSheet } from "../cheatsheet.js";
 import { runTour } from "../tour.js";
 import { mountSchemaPanel } from "./schema-view.js";
+import { gradeParsons } from "../parsons.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 
 const TABS = [
@@ -225,7 +226,7 @@ export async function renderQuest({ navigate, levelId }) {
   function renderStageBody(stage) {
     const wrap = el("div", {});
     const instrBox = el("div", { class: "instruction-box" }, [
-      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.code ? "🔮 " : ""}${stage.title}`),
+      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.code ? "🔮 " : ""}${stage.type === "parsons" ? "🧩 " : ""}${stage.title}`),
       el("p", { style: "margin:0;" }, stage.instruction || stage.question || ""),
     ]);
     if (stage.requiredConstructs && stage.requiredConstructs.length) {
@@ -239,6 +240,8 @@ export async function renderQuest({ navigate, levelId }) {
 
     if (stage.type === "quiz") {
       wrap.appendChild(renderQuiz(stage));
+    } else if (stage.type === "parsons") {
+      wrap.appendChild(renderParsons(stage));
     } else if (stage.type === "reflect") {
       wrap.appendChild(renderReflect(stage));
     } else {
@@ -344,6 +347,137 @@ export async function renderQuest({ navigate, levelId }) {
     if (alreadyPassed) {
       renderFeedback(true, stage.explainCorrect || "Jawaban tepat.");
       revealActualResult();
+    }
+    return wrap;
+  }
+
+  // "Susun potongan SQL": arrange shuffled pieces (some are decoys) into a query.
+  // Buttons only (no drag & drop) so it works by keyboard, screen reader and touch.
+  function renderParsons(stage) {
+    const sp = getStageProgress(level.id, stage.id);
+    let solved = sp.status === "passed";
+    let answer = solved ? [...stage.solution] : [];
+    let pendingFocus = null;
+
+    const wrap = el("div", {});
+    const answerBox = el("div", { class: "parsons-answer" });
+    const bank = el("div", { class: "parsons-bank", role: "group", "aria-label": "Potongan tersedia" });
+    const actions = el("div", { class: "parsons-actions" });
+    const feedback = el("div", { role: "status", "aria-live": "polite" });
+    const reveal = el("div", {});
+    const bankTitle = el("div", { class: "section-title", style: "margin-top:14px;" }, "Potongan tersedia");
+    const displayOrder = shuffledOptionOrder(stage.pieces.length, `${level.id}:${stage.id}:${getState().studentName}`);
+
+    wrap.append(
+      el("div", { class: "section-title", style: "margin-top:12px;" }, "Susunan Anda"),
+      answerBox,
+      bankTitle,
+      bank,
+      actions,
+      feedback,
+      reveal,
+      el("details", { class: "micro-block", style: "margin-top:12px;" }, [
+        el("summary", { style: "cursor:pointer;font-weight:800;font-size:13px;color:var(--brand);" }, "💡 Bantuan: urutan klausa SQL"),
+        el("p", { style: "margin:8px 0 0;font-size:13px;" }, "SELECT → FROM → JOIN … ON → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT. Subquery ditulis di dalam tanda kurung."),
+      ])
+    );
+
+    const ctl = (label, key, aria, onclick, extra = {}) => el("button", { class: "btn btn-ghost btn-sm parsons-ctl", "data-key": key, "aria-label": aria, onclick, ...extra }, label);
+
+    function draw() {
+      clear(answerBox);
+      clear(bank);
+      clear(actions);
+      bankTitle.style.display = solved ? "none" : "";
+      if (!answer.length) {
+        answerBox.appendChild(el("div", { class: "empty-hint" }, "Ketuk potongan di bawah untuk menambahkannya ke sini, lalu atur urutannya."));
+      } else {
+        const list = el("ol", { class: "parsons-list", role: "list" });
+        answer.forEach((idx, pos) => {
+          const text = stage.pieces[idx];
+          const item = el("li", { class: `parsons-item${solved ? " solved" : ""}` }, [el("code", { class: "parsons-code" }, text)]);
+          if (!solved) {
+            item.append(
+              ctl("↑", `up-${pos}`, `Naikkan: ${text}`, () => move(pos, -1), { disabled: pos === 0 }),
+              ctl("↓", `down-${pos}`, `Turunkan: ${text}`, () => move(pos, 1), { disabled: pos === answer.length - 1 }),
+              ctl("✕", `rm-${pos}`, `Kembalikan ke daftar potongan: ${text}`, () => remove(pos))
+            );
+          }
+          list.appendChild(item);
+        });
+        answerBox.appendChild(list);
+      }
+      if (!solved) {
+        for (const idx of displayOrder) {
+          if (answer.includes(idx)) continue;
+          bank.appendChild(el("button", { class: "parsons-piece", "data-key": `bank-${idx}`, onclick: () => add(idx) }, stage.pieces[idx]));
+        }
+        if (!bank.children.length) bank.appendChild(el("div", { class: "empty-hint" }, "Semua potongan sudah dipakai."));
+        actions.append(
+          el("button", { class: "btn btn-primary btn-sm", "data-key": "check", onclick: check }, "▶ Cek Susunan"),
+          el("button", { class: "btn btn-ghost btn-sm", onclick: () => { answer = []; clear(feedback); pendingFocus = null; draw(); } }, "↺ Ulangi")
+        );
+      }
+      if (pendingFocus) {
+        const target = wrap.querySelector(`[data-key="${pendingFocus}"]`);
+        if (target) target.focus();
+        pendingFocus = null;
+      }
+    }
+
+    function add(idx) {
+      answer.push(idx);
+      const next = displayOrder.find((i) => !answer.includes(i));
+      pendingFocus = next !== undefined ? `bank-${next}` : "check";
+      draw();
+    }
+    function remove(pos) {
+      const [idx] = answer.splice(pos, 1);
+      pendingFocus = `bank-${idx}`;
+      draw();
+    }
+    function move(pos, dir) {
+      const to = pos + dir;
+      [answer[pos], answer[to]] = [answer[to], answer[pos]];
+      // keep focus on the same kind of button; at the ends that button is disabled, so use the other one
+      const atEnd = dir < 0 ? to === 0 : to === answer.length - 1;
+      pendingFocus = `${(dir < 0) !== atEnd ? "up" : "down"}-${to}`;
+      draw();
+    }
+
+    function revealResult() {
+      clear(reveal);
+      const exec = st.sandbox.run(stage.referenceSql);
+      reveal.appendChild(el("div", { class: "section-title", style: "margin-top:14px;" }, "Hasil query Anda"));
+      reveal.appendChild(exec.ok && exec.results.length ? renderResultTable(exec.results) : el("div", { class: "empty-hint" }, "Query ini menghasilkan 0 baris."));
+    }
+
+    function check() {
+      const r = gradeParsons(st.sandbox, stage, answer);
+      clear(feedback);
+      const box = el("div", { class: `feedback-box ${r.passed ? "pass" : "fail"}`, style: "margin-top:10px;" }, [
+        el("div", { class: "fb-title" }, r.passed ? "✅ Susunan Tepat" : "❌ Belum Tepat"),
+        el("p", { style: "margin:0;" }, r.message),
+      ]);
+      if (!r.passed && r.sql) box.appendChild(el("pre", { class: "code-block", style: "margin-top:8px;white-space:pre-wrap;" }, r.sql));
+      feedback.appendChild(box);
+      if (!r.passed) return;
+      solved = true;
+      const done = completeUngradedStage(level, stage, { sql: r.sql });
+      if (done.xpAwarded) showXpToast(done.xpAwarded, stage.title);
+      renderHeader();
+      draw();
+      revealResult();
+      const isLast = level.stages[level.stages.length - 1].id === stage.id;
+      box.appendChild(
+        el("button", { class: "btn btn-submit btn-sm", style: "margin-top:10px;", onclick: () => (isLast ? navigate("journey") : advanceStageIfPossible()) }, isLast ? "Selesai — Kembali ke Journey →" : "Lanjut ke Tahap Berikutnya →")
+      );
+    }
+
+    draw();
+    if (solved) {
+      feedback.appendChild(el("div", { class: "feedback-box pass", style: "margin-top:10px;" }, [el("div", { class: "fb-title" }, "✅ Susunan Tepat"), el("p", { style: "margin:0;" }, stage.explainCorrect)]));
+      revealResult();
     }
     return wrap;
   }

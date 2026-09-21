@@ -696,6 +696,19 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 .erd-node[aria-pressed="true"] .erd-box { stroke: var(--brand); stroke-width: 3; }
 .erd-node.dim, .erd-edge.dim { opacity: .28; }
 
+/* ---- Parsons (susun potongan SQL) --------------------------------------- */
+.parsons-list { list-style: none; counter-reset: parsons; margin: 0; padding: 0; }
+.parsons-item::before { counter-increment: parsons; content: counter(parsons) "."; min-width: 22px; font-weight: 800; color: var(--text-dim); }
+.parsons-item { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-panel); }
+.parsons-item.solved { border-color: var(--good); }
+.parsons-code, .parsons-piece { font-family: var(--mono); font-size: 12.5px; }
+.parsons-code { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
+.parsons-ctl { min-width: 36px; padding: 4px 8px; }
+.parsons-bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.parsons-piece { text-align: left; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px dashed var(--brand); background: var(--bg-elevated); color: var(--text); cursor: pointer; overflow-wrap: anywhere; }
+.parsons-piece:hover { border-style: solid; }
+.parsons-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
 /* Route/page transition */
 .page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }
 @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
