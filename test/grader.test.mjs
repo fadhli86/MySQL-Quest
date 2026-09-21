@@ -151,3 +151,12 @@ test("quiz option order: a permutation, stable per seed, varies across seeds", (
   const firsts = new Set(Array.from({ length: 40 }, (_, i) => shuffledOptionOrder(4, `1:s2:student${i}`)[0]));
   assert.ok(firsts.size >= 3, "the answer does not always land in the same position");
 });
+
+test("getSchemaMap lists tables and views with their columns (for autocomplete)", async () => {
+  const sb = await fresh();
+  sb.run("CREATE VIEW v_top AS SELECT name FROM t WHERE score > 80;");
+  const map = sb.getSchemaMap();
+  assert.deepEqual(map.t, ["id", "name", "score"]);
+  assert.deepEqual(map.v_top, ["name"]);
+  assert.ok(!Object.keys(map).some((k) => k.startsWith("sqlite_")));
+});

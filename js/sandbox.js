@@ -188,6 +188,15 @@ export class Sandbox {
     }
   }
 
+  // { tableName: [columnName, ...] } for every table and view — used to feed
+  // editor autocomplete. Internal sqlite_* tables are left out.
+  getSchemaMap() {
+    const map = {};
+    const objects = this.query("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    for (const { name } of objects) map[name] = this.getTableInfo(name).map((c) => c.name);
+    return map;
+  }
+
   tableExists(name) {
     const rows = this.query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", [name]);
     return rows.length > 0;

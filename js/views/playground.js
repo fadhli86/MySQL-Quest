@@ -1,4 +1,5 @@
 import { Sandbox, humanizeSqlError } from "../sandbox.js";
+import { enableSchemaAutocomplete } from "../editor-hint.js";
 import { el, clear, confirmModal, toast } from "../ui.js";
 
 const PLAYGROUND_SQL = `
@@ -142,6 +143,7 @@ export async function renderPlayground() {
     matchBrackets: true,
     extraKeys: { "Ctrl-Space": "autocomplete" },
   });
+  enableSchemaAutocomplete(cm, () => sandbox.getSchemaMap());
   setTimeout(() => cm.refresh(), 30);
 
   toolbar.firstChild.addEventListener("click", async () => {

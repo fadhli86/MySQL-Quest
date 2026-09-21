@@ -17,6 +17,7 @@ import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.j
 import { celebrateLevelComplete } from "../confetti.js";
 import { shuffledOptionOrder } from "../quiz-utils.js";
 import { MYSQL_NOTES } from "../mysql-notes.js";
+import { enableSchemaAutocomplete } from "../editor-hint.js";
 
 const TABS = [
   { id: "quest", label: "Quest", icon: "📜" },
@@ -370,6 +371,7 @@ export async function renderQuest({ navigate, levelId }) {
       autofocus: false,
       extraKeys: { "Ctrl-Space": "autocomplete" },
     });
+    enableSchemaAutocomplete(st.cm, () => st.sandbox.getSchemaMap());
     st.cm.on("change", () => {
       clearTimeout(st.saveTimer);
       st.saveTimer = setTimeout(() => saveDraft(draftKeyOf(stage), st.cm.getValue()), 500);
