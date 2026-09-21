@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEVELS, Sandbox, sqlStages, solutionFor } from "./helpers.mjs";
+import { MYSQL_NOTES } from "../js/mysql-notes.js";
 
 test("there are 14 levels with sequential ids", () => {
   assert.deepEqual(LEVELS.map((l) => l.id), Array.from({ length: 14 }, (_, i) => i + 1));
@@ -49,3 +50,14 @@ for (const level of LEVELS) {
     assert.deepEqual(missing, [], `declared tables missing: ${missing.join(", ")}`);
   });
 }
+
+test("every level has MySQL-vs-sandbox notes with both sides filled in", () => {
+  for (const level of LEVELS) {
+    const notes = MYSQL_NOTES[level.id];
+    assert.ok(Array.isArray(notes) && notes.length >= 1, `L${level.id}: has notes`);
+    for (const n of notes) {
+      assert.ok(n.topic && n.sandbox && n.mysql, `L${level.id} "${n.topic}": topic, sandbox and mysql are required`);
+    }
+  }
+  assert.deepEqual(Object.keys(MYSQL_NOTES).map(Number).sort((a, b) => a - b), LEVELS.map((l) => l.id), "no notes for unknown levels");
+});

@@ -16,6 +16,7 @@ import {
 import { el, clear, toast, showXpToast, confirmModal, escapeHtml } from "../ui.js";
 import { celebrateLevelComplete } from "../confetti.js";
 import { shuffledOptionOrder } from "../quiz-utils.js";
+import { MYSQL_NOTES } from "../mysql-notes.js";
 
 const TABS = [
   { id: "quest", label: "Quest", icon: "📜" },
@@ -143,6 +144,9 @@ export async function renderQuest({ navigate, levelId }) {
     }
     panelQuest.appendChild(microDetails);
 
+    const notes = MYSQL_NOTES[level.id];
+    if (notes && notes.length) panelQuest.appendChild(renderMysqlNotes(notes));
+
     const pillRow = el("div", { class: "stage-pill-row" });
     level.stages.forEach((stg, i) => {
       pillRow.appendChild(
@@ -152,6 +156,24 @@ export async function renderQuest({ navigate, levelId }) {
     panelQuest.appendChild(pillRow);
 
     panelQuest.appendChild(renderStageBody(stage));
+  }
+
+  // Collapsible "what differs in real MySQL" section. The sandbox is SQLite,
+  // so students are told up front where the two diverge.
+  function renderMysqlNotes(notes) {
+    const box = el("details", { class: "micro-block mysql-notes" });
+    box.appendChild(el("summary", { style: "cursor:pointer;font-weight:800;font-size:13px;color:var(--brand);" }, "🐬 Beda dengan MySQL sungguhan"));
+    box.appendChild(el("p", { class: "tag-note", style: "margin:8px 0 0;" }, "Sandbox ini memakai SQLite. Sebagian besar SQL yang Anda pelajari sama dengan MySQL, tetapi hal berikut berbeda."));
+    for (const n of notes) {
+      const item = el("div", { style: "margin-top:12px;" }, [
+        el("h4", {}, n.topic),
+        el("p", { style: "margin:4px 0 0;" }, [el("b", {}, "Di sandbox: "), n.sandbox]),
+        el("p", { style: "margin:4px 0 0;" }, [el("b", {}, "Di MySQL: "), n.mysql]),
+      ]);
+      if (n.code) item.appendChild(el("pre", { class: "code-block" }, n.code));
+      box.appendChild(item);
+    }
+    return box;
   }
 
   function renderStageBody(stage) {

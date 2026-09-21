@@ -25,6 +25,9 @@ let toastTimer = null;
 export function toast(message, type = "") {
   const root = document.getElementById("toast-root");
   const t = el("div", { class: `toast ${type}` }, message);
+  // Cap the stack: XP toasts + feedback toasts arriving together used to
+  // pile up over the header/tabs on small screens.
+  while (root.children.length >= 2) root.firstElementChild.remove();
   root.appendChild(t);
   setTimeout(() => {
     t.style.transition = "opacity .3s";
