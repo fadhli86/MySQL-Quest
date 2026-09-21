@@ -670,6 +670,32 @@ pre.code-block { background: #050a15; border: 1px solid var(--border); border-ra
 .tour-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .tour-highlight { outline: 3px solid var(--brand); outline-offset: 3px; border-radius: var(--radius); box-shadow: 0 0 0 8px rgba(56,189,248,.22); }
 
+/* ---- Schema view switch + ER diagram ------------------------------------- */
+.schema-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--bg-panel); }
+.seg-btn { background: transparent; border: 0; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--text-dim); cursor: pointer; }
+.seg-btn.active { background: var(--btn-primary-bg); color: var(--btn-primary-fg); }
+.erd-toolbar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.erd-scroll { padding: 4px; }
+.modal-box.modal-full { max-width: 96vw; width: 96vw; max-height: 92vh; overflow: auto; }
+.erd-svg { display: block; max-width: none; font-family: var(--mono); font-size: 12.5px; }
+.erd-box { fill: var(--bg-panel); stroke: var(--border); stroke-width: 1.5; }
+.erd-head { fill: var(--bg-elevated); stroke: none; }
+.erd-title { fill: var(--brand); font-weight: 800; font-size: 13.5px; }
+.erd-col { fill: var(--text); }
+.erd-sep { stroke: var(--border-soft); }
+.erd-key { font-size: 10.5px; font-weight: 800; }
+.erd-key.pk { fill: var(--xp); }
+.erd-key.fk { fill: var(--accent); }
+.erd-edge path { fill: none; stroke: var(--brand); stroke-width: 2; }
+.erd-edge.inferred path { stroke-dasharray: 6 5; }
+.erd-card { fill: var(--text-dim); font-weight: 800; font-size: 12px; }
+.erd-node { cursor: pointer; }
+.erd-node:focus { outline: none; }
+.erd-node:focus-visible .erd-box, .erd-node:hover .erd-box { stroke: var(--brand); stroke-width: 3; }
+.erd-node[aria-pressed="true"] .erd-box { stroke: var(--brand); stroke-width: 3; }
+.erd-node.dim, .erd-edge.dim { opacity: .28; }
+
 /* Route/page transition */
 .page-enter { animation: page-in .32s cubic-bezier(.22,.61,.36,1) both; }
 @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

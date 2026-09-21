@@ -38,7 +38,7 @@ const over = (top, alpha, bottom) => top.map((v, i) => v * alpha + bottom[i] * (
 const gradientStops = (v) => [...v.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => hex(m[0]));
 
 const SURFACES = ["bg", "bg-panel", "bg-panel-2", "bg-elevated"];
-const TEXT_TOKENS = ["text", "text-dim", "text-faint", "brand", "good", "warn", "bad", "xp", "locked"];
+const TEXT_TOKENS = ["text", "text-dim", "text-faint", "brand", "accent", "good", "warn", "bad", "xp", "locked"];
 
 for (const [name, t] of [["light", light], ["dark", dark]]) {
   test(`${name} theme: text tokens reach 4.5:1 on all surfaces`, () => {

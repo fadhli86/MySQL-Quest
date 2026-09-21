@@ -1,6 +1,7 @@
 import { Sandbox, humanizeSqlError } from "../sandbox.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 import { openCheatSheet } from "../cheatsheet.js";
+import { mountSchemaPanel } from "./schema-view.js";
 import { el, clear, confirmModal, toast } from "../ui.js";
 
 const PLAYGROUND_SQL = `
@@ -183,18 +184,28 @@ export async function renderPlayground() {
   }
   runRow.firstChild.addEventListener("click", run);
 
+  const SCHEMA_TABLES = ["departments", "students", "courses", "lecturers", "classes", "enrollments", "payments"];
+
   function renderSchema() {
-    clear(panelSchema);
-    panelSchema.appendChild(el("div", { class: "section-title" }, "Schema"));
-    for (const t of ["departments", "students", "courses", "lecturers", "classes", "enrollments", "payments"]) {
+    mountSchemaPanel(panelSchema, {
+      title: "Schema",
+      renderList: renderSchemaList,
+      getErdSchema: () => sandbox.getErdSchema().filter((t) => SCHEMA_TABLES.includes(t.name)),
+    });
+  }
+
+  function renderSchemaList() {
+    const list = el("div", {});
+    for (const t of SCHEMA_TABLES) {
       if (!sandbox.tableExists(t)) continue;
       const info = sandbox.getTableInfo(t);
       const block = el("div", { class: "schema-table" }, [el("div", { class: "tname" }, t)]);
       info.forEach((c) => {
         block.appendChild(el("div", { class: "schema-col" }, [el("span", { class: "cname" }, c.name), el("span", { class: "ctype" }, c.type || "TEXT")]));
       });
-      panelSchema.appendChild(block);
+      list.appendChild(block);
     }
+    return list;
   }
   renderSchema();
   panelResult.appendChild(el("div", { class: "empty-hint" }, "Jalankan query untuk melihat hasil."));

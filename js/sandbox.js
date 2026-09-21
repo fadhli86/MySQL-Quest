@@ -197,6 +197,17 @@ export class Sandbox {
     return map;
   }
 
+  // Tables (not views) with their columns and declared foreign keys, for the
+  // ER diagram: [{ name, columns: [{ name, type, pk }], fks: [{ column, refTable, refColumn }] }]
+  getErdSchema() {
+    const tables = this.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid");
+    return tables.map(({ name }) => ({
+      name,
+      columns: this.getTableInfo(name).map((c) => ({ name: c.name, type: c.type || "TEXT", pk: c.pk > 0 })),
+      fks: this.query(`PRAGMA foreign_key_list(${name})`).map((f) => ({ column: f.from, refTable: f.table, refColumn: f.to })),
+    }));
+  }
+
   tableExists(name) {
     const rows = this.query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", [name]);
     return rows.length > 0;

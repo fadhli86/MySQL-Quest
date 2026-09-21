@@ -21,6 +21,7 @@ import { shuffledOptionOrder } from "../quiz-utils.js";
 import { MYSQL_NOTES } from "../mysql-notes.js";
 import { openCheatSheet } from "../cheatsheet.js";
 import { runTour } from "../tour.js";
+import { mountSchemaPanel } from "./schema-view.js";
 import { enableSchemaAutocomplete, makeEditorAccessible } from "../editor-hint.js";
 
 const TABS = [
@@ -679,8 +680,15 @@ export async function renderQuest({ navigate, levelId }) {
 
   // -------------------------------------------------------------- schema panel
   function renderSchemaPanel() {
-    clear(panelSchema);
-    panelSchema.appendChild(el("div", { class: "section-title" }, "Schema Sandbox"));
+    mountSchemaPanel(panelSchema, {
+      title: "Schema Sandbox",
+      renderList: renderSchemaList,
+      getErdSchema: () => st.sandbox.getErdSchema().filter((t) => level.tables.includes(t.name)),
+    });
+  }
+
+  function renderSchemaList() {
+    const list = el("div", {});
     for (const tableName of level.tables) {
       if (!st.sandbox.tableExists(tableName)) continue;
       const info = st.sandbox.getTableInfo(tableName);
@@ -705,8 +713,9 @@ export async function renderQuest({ navigate, levelId }) {
         ]);
         block.appendChild(el("div", { class: "schema-sample" }, el("div", { class: "table-scroll" }, sTable)));
       }
-      panelSchema.appendChild(block);
+      list.appendChild(block);
     }
+    return list;
   }
 
   // -------------------------------------------------------------- action bar (mobile)
