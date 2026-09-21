@@ -863,6 +863,24 @@ WHERE student_id NOT IN (
       { id: "q1", type: "quiz", title: "Cek Konsep: Manfaat VIEW", question: "Apa manfaat utama sebuah VIEW?", options: ["Menyalin data ke tabel fisik baru agar query lebih cepat", "Menyimpan sebuah query sebagai tabel virtual yang bisa dipakai ulang, dan dapat menyembunyikan kolom atau baris tertentu", "Menggantikan kebutuhan primary key", "Membuat cadangan (backup) data otomatis"], correctIndex: 1, explainCorrect: "Tepat — view tidak menyimpan data sendiri; ia menjalankan query yang disimpan setiap kali dipakai, berguna untuk menyederhanakan query dan membatasi data yang terlihat.", explainWrongByOption: ["View tidak menyalin data, sehingga tidak dengan sendirinya mempercepat query.", null, "View tidak berhubungan dengan primary key.", "View bukan mekanisme backup; ia hanya query yang disimpan."], xp: 10, graded: false },
       { id: "q2", type: "quiz", title: "Cek Konsep: Trade-off Index", question: "Apa trade-off dari membuat INDEX pada sebuah kolom?", options: ["Mempercepat pencarian, tetapi memakai ruang tambahan dan memperlambat INSERT/UPDATE/DELETE", "Mempercepat semua operasi tanpa biaya apa pun", "Mengubah isi data tabel menjadi terurut permanen", "Tidak perlu dibuat karena database membuat index untuk semua kolom otomatis"], correctIndex: 0, explainCorrect: "Benar — index adalah struktur bantu; setiap perubahan data juga harus memperbarui index. Buat index untuk kolom yang sering dipakai mencari, menggabungkan, atau mengurutkan.", explainWrongByOption: [null, "Index punya biaya: ruang penyimpanan dan waktu tambahan saat data berubah.", "Index tidak mengubah isi data; ia hanya struktur bantu untuk pencarian.", "Database hanya membuat index otomatis untuk primary key dan constraint UNIQUE, bukan untuk semua kolom."], xp: 10, graded: false },
       {
+        id: "o1", type: "sql", title: "Optimasi: Cari per Course", graded: false, xp: 30,
+        instruction: "Query berikut mengambil semua enrollment untuk course_id 101, tetapi rencana eksekusinya SCAN — seluruh tabel dibaca baris demi baris. Buat sebuah INDEX yang tepat, lalu jalankan query-nya lagi di akhir jawaban sampai rencana eksekusinya memakai index (SEARCH … USING INDEX).",
+        starterSql: "SELECT * FROM enrollments\nWHERE course_id = 101;",
+        referenceSql: "SELECT * FROM enrollments WHERE course_id = 101;",
+        requiredConstructs: ["CREATE INDEX"],
+        plan: {"mustMatch": "USING (COVERING )?INDEX", "hintOnFail": "Rencana eksekusi masih SCAN (seluruh tabel dibaca). Index harus dibuat pada kolom yang dipakai di WHERE, dan query-nya dijalankan sesudahnya."},
+        hints: ["Baca kotak \"Rencana eksekusi\" setelah Submit: SCAN berarti seluruh baris dibaca satu per satu.", "Index dibuat dengan CREATE INDEX nama ON tabel(kolom) — pilih kolom yang dipakai pada WHERE.", "Setelah index dibuat, jalankan lagi SELECT-nya di akhir jawaban agar rencana eksekusinya dianalisis."],
+      },
+      {
+        id: "o2", type: "sql", title: "Optimasi: Fungsi di Kolom", graded: false, xp: 30,
+        instruction: "Query ini mencari mahasiswa dari Malang, tetapi memakai UPPER(city) sehingga rencana eksekusinya SCAN. Buat index pada kolom yang tepat DAN tulis ulang kondisi WHERE agar index itu bisa dipakai. Hasilnya harus tetap sama.",
+        starterSql: "SELECT full_name FROM students\nWHERE UPPER(city) = 'MALANG';",
+        referenceSql: "SELECT full_name FROM students WHERE city = 'Malang';",
+        requiredConstructs: ["CREATE INDEX"],
+        plan: {"mustMatch": "USING (COVERING )?INDEX", "hintOnFail": "Rencana eksekusi masih SCAN (seluruh tabel dibaca). Index harus dibuat pada kolom yang dipakai di WHERE, dan query-nya dijalankan sesudahnya."},
+        hints: ["Index hanya bisa dipakai bila kolom di WHERE berdiri sendiri — fungsi yang membungkus kolom (mis. UPPER(city)) membuatnya diabaikan.", "Ada dua langkah: buat index pada city, lalu ubah kondisi WHERE tanpa fungsi.", "Nama kota di data ditulis dengan huruf kapital di awal saja, misalnya 'Malang'."],
+      },
+      {
         id: "s2", type: "sql", title: "Mini Quest: View Mahasiswa Teladan", graded: true, weight: 1, xp: 30,
         instruction: "Buat VIEW bernama view_mahasiswa_teladan yang menampilkan full_name, gpa, city dari mahasiswa dengan gpa >= 3.5. Lalu tampilkan seluruh isinya dengan SELECT * FROM view_mahasiswa_teladan;.",
         starterSql: "CREATE VIEW view_mahasiswa_teladan AS\nSELECT ____ FROM students WHERE ____;\n\nSELECT * FROM view_mahasiswa_teladan;",
@@ -871,7 +889,7 @@ WHERE student_id NOT IN (
         hints: ["CREATE VIEW nama AS SELECT ...;", "Kolom yang diminta: full_name, gpa, city dengan syarat gpa >= 3.5.", "Setelah CREATE VIEW, jangan lupa SELECT * FROM view_mahasiswa_teladan; agar ada hasil yang dinilai."],
       },
       {
-        id: "s3", type: "sql", title: "Challenge: Index Pencarian Department", graded: true, weight: 2, xp: 50, noHintBonus: true, portfolio: true, efficiencyHint: "expect-index",
+        id: "s3", type: "sql", title: "Challenge: Index Pencarian Department", graded: true, weight: 2, xp: 50, noHintBonus: true, portfolio: true, plan: { query: "SELECT * FROM students WHERE dept_id = 2", mustMatch: "USING (COVERING )?INDEX", hintOnFail: "Index sudah ada, tetapi rencana eksekusi untuk pencarian dept_id masih SCAN — pastikan index dibuat pada kolom yang dipakai di WHERE." },
         instruction: "Buat INDEX bernama idx_students_dept pada kolom dept_id di tabel students. Setelah itu jalankan EXPLAIN QUERY PLAN SELECT * FROM students WHERE dept_id = 2; agar Anda bisa mengamati apakah index tersebut digunakan.",
         starterSql: "CREATE INDEX ____ ON students(____);\n\nEXPLAIN QUERY PLAN SELECT * FROM students WHERE dept_id = 2;",
         requiredConstructs: ["CREATE INDEX", "EXPLAIN"],
@@ -1025,6 +1043,16 @@ WHERE student_id NOT IN (
     ],
     stages: [
       { id: "s1", type: "quiz", title: "Mengapa Parameterized Query?", question: "Mengapa aplikasi produksi sebaiknya menggunakan parameterized query/prepared statement, bukan menggabungkan input pengguna langsung ke string SQL?", options: ["Mencegah SQL Injection", "Membuat query berjalan lebih lambat", "Supaya tabel otomatis ternormalisasi", "Agar index otomatis terbentuk"], correctIndex: 0, explainWrongByOption: [null, "Parameterized query tidak membuat query lebih lambat secara berarti; tujuan utamanya keamanan, bukan kecepatan.", "Normalisasi adalah soal desain tabel, tidak berkaitan dengan cara aplikasi mengirim query.", "Index dibuat dengan CREATE INDEX, bukan otomatis oleh parameterized query; manfaat utamanya adalah mencegah SQL Injection."], explainCorrect: "Benar — parameterized query memisahkan kode SQL dari data input sehingga input berbahaya tidak bisa mengubah struktur query; inilah pertahanan utama terhadap SQL Injection.", xp: 10, graded: false },
+      {
+        id: "o3", type: "sql", title: "Optimasi: ORDER BY tanpa Sortir", graded: false, xp: 30,
+        instruction: "Query berikut mengambil 3 mahasiswa ber-GPA tertinggi, tetapi rencana eksekusinya memuat USE TEMP B-TREE FOR ORDER BY (database mengurutkan sendiri di memori). Buat index agar urutan dibaca langsung dari index, lalu jalankan query yang sama di akhir jawaban.",
+        starterSql: "SELECT full_name, gpa FROM students\nORDER BY gpa DESC\nLIMIT 3;",
+        referenceSql: "SELECT full_name, gpa FROM students ORDER BY gpa DESC LIMIT 3;",
+        requiredConstructs: ["CREATE INDEX"],
+        orderSensitive: true,
+        plan: {"mustMatch": "USING (COVERING )?INDEX", "mustNotMatch": "TEMP B-TREE", "hintOnFail": "Rencana eksekusi masih menyortir manual (USE TEMP B-TREE FOR ORDER BY) atau membaca seluruh tabel. Index pada kolom ORDER BY membuat urutan tersedia langsung."},
+        hints: ["Lihat kotak \"Rencana eksekusi\": baris USE TEMP B-TREE FOR ORDER BY berarti pengurutan dilakukan manual.", "Index pada kolom yang dipakai di ORDER BY dapat dibaca dari besar ke kecil tanpa disortir ulang.", "Buat index pada gpa, lalu jalankan lagi SELECT yang sama di akhir jawaban."],
+      },
       {
         id: "s2", type: "sql", title: "Final Boss — Bagian 1: Jadwal Mahasiswa", graded: true, weight: 1, xp: 50,
         instruction: "Tampilkan full_name mahasiswa, dept_name, lecturer_name (nama dosen pengampu), dan room untuk setiap enrollment pada semester 'Ganjil 2025/2026' (gabungkan enrollments → students → departments → classes → lecturers, hubungkan classes ke enrollments berdasarkan course_id DAN semester yang sama).",

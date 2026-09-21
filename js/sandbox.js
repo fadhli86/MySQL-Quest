@@ -12,7 +12,7 @@ const INSERT_RE = /^\s*INSERT\s+INTO\b/i;
 // RAISE(ABORT, '...'); inside a trigger). Good enough for the
 // teaching-level SQL this app handles — doesn't need to understand
 // comments, dollar-quoting, nested procedural blocks, etc.
-function splitStatements(sql) {
+export function splitStatements(sql) {
   const statements = [];
   let current = "";
   let inString = false;
@@ -206,6 +206,22 @@ export class Sandbox {
       columns: this.getTableInfo(name).map((c) => ({ name: c.name, type: c.type || "TEXT", pk: c.pk > 0 })),
       fks: this.query(`PRAGMA foreign_key_list(${name})`).map((f) => ({ column: f.from, refTable: f.table, refColumn: f.to })),
     }));
+  }
+
+  // Lines of SQLite's EXPLAIN QUERY PLAN for one SELECT ("SCAN t", "SEARCH t
+  // USING INDEX i (col=?)", "USE TEMP B-TREE FOR ORDER BY", ...), or null if
+  // the statement can't be planned. Read-only: nothing is executed or changed.
+  explainPlan(selectSql) {
+    if (!this.db) return null;
+    try {
+      const stmt = this.db.prepare(`EXPLAIN QUERY PLAN ${selectSql}`);
+      const lines = [];
+      while (stmt.step()) lines.push(String(stmt.getAsObject().detail));
+      stmt.free();
+      return lines;
+    } catch (e) {
+      return null;
+    }
   }
 
   tableExists(name) {

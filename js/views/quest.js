@@ -226,7 +226,7 @@ export async function renderQuest({ navigate, levelId }) {
   function renderStageBody(stage) {
     const wrap = el("div", {});
     const instrBox = el("div", { class: "instruction-box" }, [
-      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.code ? "🔮 " : ""}${stage.type === "parsons" ? "🧩 " : ""}${stage.title}`),
+      el("div", { style: "font-weight:800;font-size:13.5px;margin-bottom:6px;" }, `${stage.bossBattle ? "⚔ " : ""}${stage.debug ? "🐞 " : ""}${stage.code ? "🔮 " : ""}${stage.type === "parsons" ? "🧩 " : ""}${stage.plan && !stage.graded ? "⚡ " : ""}${stage.title}`),
       el("p", { style: "margin:0;" }, stage.instruction || stage.question || ""),
     ]);
     if (stage.requiredConstructs && stage.requiredConstructs.length) {
@@ -762,9 +762,20 @@ export async function renderQuest({ navigate, levelId }) {
       box.appendChild(el("div", { style: "margin-top:10px;font-weight:800;font-size:13px;" }, `Skor: ${gradeResult.score}%`));
     }
     panelResult.appendChild(box);
+    if (gradeResult.plan) panelResult.appendChild(renderPlan(gradeResult.plan));
     if (gradeResult.diff) panelResult.appendChild(renderDiff(gradeResult.diff));
     if (execResult && execResult.ok) panelResult.appendChild(renderResultTable(execResult.results));
     else if (execResult) panelResult.appendChild(el("div", { class: "error-box" }, humanizeSqlError(execResult.error)));
+  }
+
+  // Efficiency challenges: the engine's own execution plan for the query that
+  // was judged, so the student can read what SCAN / SEARCH / TEMP B-TREE mean.
+  function renderPlan(plan) {
+    const box = el("div", { class: "diff-box" }, [el("div", { class: "diff-title" }, `⚡ Rencana eksekusi ${plan.ok ? "— efisien ✓" : "— belum efisien"}`)]);
+    if (plan.query) box.appendChild(el("pre", { class: "code-block", style: "margin:0 0 6px;white-space:pre-wrap;" }, plan.query));
+    box.appendChild(el("pre", { class: "code-block", style: "margin:0;white-space:pre-wrap;", "aria-label": "Baris rencana eksekusi" }, plan.lines.length ? plan.lines.join(String.fromCharCode(10)) : "(tidak ada)"));
+    box.appendChild(el("p", { class: "tag-note", style: "margin:8px 0 0;" }, "SCAN = seluruh tabel dibaca baris demi baris. SEARCH … USING INDEX = index dipakai untuk langsung menuju baris yang dicari. USE TEMP B-TREE FOR ORDER BY = hasil diurutkan manual di memori."));
+    return box;
   }
 
   // Shows what differs between the student's result and the target:

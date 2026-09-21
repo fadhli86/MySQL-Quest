@@ -14,7 +14,7 @@
 // all yet (needs NLP/rubric review). Components a stage cannot assess are
 // `null` in the breakdown, hidden in the UI, and excluded from the weighted
 // score — a constant 100 would make the score look more thorough than it is.
-import { humanizeSqlError } from "./sandbox.js";
+import { humanizeSqlError, splitStatements } from "./sandbox.js";
 
 const DEFAULT_WEIGHTS = { correctness: 50, concept: 20, efficiency: 15, interpretation: 15 };
 
@@ -151,6 +151,33 @@ function checkConstructs(sql, list, mode) {
   return { ok: missing.length === 0, missing };
 }
 
+// The last SELECT of a submission (an `EXPLAIN QUERY PLAN` / `EXPLAIN` prefix
+// is stripped), i.e. the query whose plan an optimisation challenge judges.
+function lastSelect(sql) {
+  const statements = splitStatements(sql);
+  for (let i = statements.length - 1; i >= 0; i--) {
+    const stmt = statements[i].replace(/^\s*EXPLAIN(\s+QUERY\s+PLAN)?\s+/i, "").trim();
+    if (/^(SELECT|WITH)\b/i.test(stmt)) return stmt.replace(/;+\s*$/, "");
+  }
+  return null;
+}
+
+// Real efficiency for optimisation challenges: judge the query PLAN the engine
+// actually chooses (after the student's statements, e.g. CREATE INDEX, ran),
+// not the query text. stage.plan = { query?, mustMatch?, mustNotMatch?, hintOnFail? }
+// — `query` fixes the SELECT to analyse; otherwise the submission's last SELECT is used.
+function evaluatePlan(sandbox, sql, plan) {
+  const target = plan.query || lastSelect(sql);
+  if (!target) return { ok: false, lines: [], note: "Tidak ada query SELECT di akhir jawaban Anda untuk dianalisis rencana eksekusinya — jalankan query-nya setelah membuat index." };
+  const lines = sandbox.explainPlan(target);
+  if (!lines) return { ok: false, lines: [], note: "Rencana eksekusi query ini tidak dapat dibaca." };
+  const text = lines.join("\n");
+  const matches = !plan.mustMatch || new RegExp(plan.mustMatch, "i").test(text);
+  const clean = !plan.mustNotMatch || !new RegExp(plan.mustNotMatch, "i").test(text);
+  const ok = matches && clean;
+  return { ok, lines, query: target, note: ok ? null : plan.hintOnFail || "Rencana eksekusi belum efisien." };
+}
+
 function efficiencyHeuristic(sql, stage) {
   if (!stage.efficiencyHint) return { score: null, note: null }; // not assessed
   const upper = sql.toUpperCase().trim();
@@ -194,6 +221,8 @@ export function gradeSqlStage(sandbox, sql, execResult, stage) {
       isError: false,
     };
   }
+
+  const plan = stage.plan && execResult.ok ? evaluatePlan(sandbox, sql, stage.plan) : null;
 
   if (!execResult.ok) {
     // Re-submitting SQL that already succeeded once (via an earlier Run or
@@ -246,13 +275,13 @@ export function gradeSqlStage(sandbox, sql, execResult, stage) {
     message = "Query berhasil dijalankan.";
   }
 
-  return { ...finalizeScore(sql, stage, weights, correctness, message), resultPreview: execResult.results, diff };
+  return { ...finalizeScore(sql, stage, weights, correctness, message, plan), resultPreview: execResult.results, diff };
 }
 
 // Shared scoring tail: given correctness (0/100) already decided by the
 // caller, checks required/forbidden constructs + efficiency heuristic and
 // combines everything into the final weighted score/pass verdict.
-function finalizeScore(sql, stage, weights, correctness, message) {
+function finalizeScore(sql, stage, weights, correctness, message, plan = null) {
   const req = checkConstructs(sql, stage.requiredConstructs, "required");
   const forb = checkConstructs(sql, stage.forbiddenConstructs, "forbidden");
   let concept = 100;
@@ -261,7 +290,8 @@ function finalizeScore(sql, stage, weights, correctness, message) {
   }
   if (!forb.ok) concept = 0;
 
-  const eff = efficiencyHeuristic(sql, stage);
+  // A plan-judged stage assesses efficiency for real (and must pass it); others fall back to the light heuristic.
+  const eff = plan ? { score: plan.ok ? 100 : 0, note: plan.ok ? null : plan.note } : efficiencyHeuristic(sql, stage);
   const breakdown = { correctness, concept, efficiency: eff.score, interpretation: null };
   const score = weightedScore(breakdown, weights);
 
@@ -271,11 +301,12 @@ function finalizeScore(sql, stage, weights, correctness, message) {
   if (!forb.ok) notes.push(`Query tidak boleh menggunakan: ${forb.missing.join(", ")}.`);
   if (eff.note) notes.push(eff.note);
 
-  const passed = score >= (stage.passThreshold || 80) && correctness === 100 && req.ok && forb.ok;
+  const passed = score >= (stage.passThreshold || 80) && correctness === 100 && req.ok && forb.ok && (!plan || plan.ok);
 
   return {
     passed,
     score,
+    plan: plan || undefined,
     breakdown,
     message: passed ? "Selesai — kriteria terpenuhi." : notes.filter(Boolean).join(" "),
     isError: false,
